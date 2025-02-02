@@ -2,6 +2,8 @@ from typing import Self
 
 from board import Board
 
+import numpy as np
+
 class GameNode(Board):
     """
     Internal class for GameTree
@@ -101,6 +103,38 @@ class GameNode(Board):
 
         return child
 
+    def generate_history(self, moves_back: int):
+        history = []
+        node = self
+        board_size = self.size
+        black_move = (self.move % 2 == 0)
+        
+        for _ in range(moves_back):
+            if node is None:
+                white_grid = np.zeros((board_size, board_size), dtype=int)
+                black_grid = np.zeros((board_size, board_size), dtype=int)
+                history.append(white_grid)
+                history.append(black_grid)
+                continue
+            
+            white_grid = (node.grid == 2).astype(int)
+            black_grid = (node.grid == 1).astype(int)
+
+            history.append(white_grid)
+            history.append(black_grid)
+        
+            node = node.prev
+        
+        np_history = np.array(history[::-1])
+        new_board = np.full((board_size, board_size), -1 if black_move else 1, dtype=int)
+        np_history = np.append(np_history, [new_board], axis=0)
+        return np_history
+
+# if __name__ == "__main__":
+#     gn= GameNode(9)
+#     gn = gn.create_child((1,1))   
+#     gn = gn.create_child((1,2))
+#     print(gn.generate_history(3))
 
 if __name__ == "__main__":
     board = GameNode(size = 9)
