@@ -18,7 +18,7 @@ def node_to_tensor(node: GameNode) -> NDArray:
     """
 
     N = node.size
-    LOOKBACK = 3 # Generates the 4*2=8 channels, could be any reasonably #
+    LOOKBACK = 3 # Generates the 3*2=8 channels, could be any reasonably #
 
     # First LOOKBACK * 2 channels
     out = []
