@@ -92,10 +92,19 @@ class Group:
                 out.append(group.copy())
         
         # Union groups of same stone containing the new stone as a liberty
-        unioned = Group(set(), set(), set(), new_stone_group.group_type)
+        new_intersections = set().union(*[group.intersections for group in need_union])
+        new_borders = set().union(*[group.borders for group in need_union])
+        new_liberties = set().union(*[group.liberties for group in need_union])
 
-        for group in need_union:
-            unioned.union_in_place_(group)
+        new_borders -= new_intersections
+        new_liberties -= new_intersections
+
+        unioned = Group(
+            intersections=new_intersections,
+            borders=new_borders,
+            liberties=new_liberties,
+            group_type=new_stone_group.group_type
+        )
         
         # Add unioned group back to group list
         out.append(unioned)

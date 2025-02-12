@@ -282,8 +282,54 @@ class Board:
         return (score[0], score[1])
 
 
+    def is_valid_move(self, row: int, col: int) -> bool:
+        # Compute stone value
+        val = self.move % 2 + 1
+
+        # Pass is always allowed
+        if (row, col) == (-1, -1):
+            return True
+        
+        # On top of another stone is never allowed
+        if self.grid[row, col] != 0:
+            return False
+        
+        # If capturing, needs play_stone
+        for group in self.groups:
+            if group.group_type == val:
+                continue
+            
+            if len(group - {(row, col)}) == 0:
+                return self.__play_stone(row, col, False)
+        
+        # Prohibit suicide
+        for group in self.groups:
+            if group.group_type == val:
+                continue
+
+            if len(group - {(row, col)}) == 0:
+                return False
+
+
     def play_stone(self, row: int, col: int, move: bool = True) -> bool:
         """
+        Attempts to place a stone of value val at (row, col)
+        
+        Returns True if the move is valid, False if not
+
+        Args:
+            row: index of the row to place the stone
+            col: index of the column to place the stone
+            move (optional): whether or not to update the board, default True
+        """
+
+        return self.__play_stone(row, col, move)
+
+
+    def __play_stone(self, row: int, col: int, move: bool = True) -> bool:
+        """
+        THIS IS A PRIVATE METHOD! DO NOT USE THIS OUTSIDE BOARD.PY
+
         Attempts to place a stone of value val at (row, col)
         
         Returns True if the move is valid, False if not
@@ -363,10 +409,6 @@ class Board:
             if len(group.liberties) > 0:
                 new_candidate_groups.append(group)
                 continue
-
-            # Remove captured stones from the board
-            for i in group.intersections:
-                candidate[i // self.size, i % self.size] = 0
             
             # Record captures
             captured |= group.intersections
@@ -374,7 +416,7 @@ class Board:
         # Update for newly opened intersections
         for group in candidate_groups:
             group.replenish_liberties(captured)
-        
+
         # Prohibit suicide
         for group in candidate_groups:
             # Skip opposite color
@@ -385,6 +427,10 @@ class Board:
                 return False
             
             new_candidate_groups.append(group)
+
+        # Remove captured stones from the board
+        for i in captured:
+            candidate[i // self.size, i % self.size] = 0
 
         candidate_groups = new_candidate_groups
 
@@ -430,10 +476,9 @@ class Board:
 
         for i in range(self.size):
             for j in range(self.size):
-                available = self.play_stone(
+                available = self.is_valid_move(
                     row = i,
-                    col = j,
-                    move = False
+                    col = j
                 )
 
                 if available:

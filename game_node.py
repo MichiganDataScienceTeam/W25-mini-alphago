@@ -89,10 +89,9 @@ class GameNode(Board):
         out = np.zeros((self.size**2 + 1, ), dtype=bool)
 
         for i in range(self.size**2):
-            available = super().play_stone(
+            available = self.is_valid_move(
                 row = i // self.size,
                 col =  i % self.size,
-                move = False
             )
 
             if available:
