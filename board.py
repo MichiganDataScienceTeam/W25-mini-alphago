@@ -299,7 +299,7 @@ class Board:
             if group.group_type == val:
                 continue
             
-            if len(group - {(row, col)}) == 0:
+            if len(group.liberties - {row*self.size + col}) == 0:
                 return self.__play_stone(row, col, False)
         
         # Prohibit suicide
@@ -307,8 +307,10 @@ class Board:
             if group.group_type == val:
                 continue
 
-            if len(group - {(row, col)}) == 0:
+            if len(group.liberties - {row*self.size + col}) == 0:
                 return False
+        
+        return True
 
 
     def play_stone(self, row: int, col: int, move: bool = True) -> bool:
