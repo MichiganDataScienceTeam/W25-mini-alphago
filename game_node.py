@@ -1,3 +1,6 @@
+import numpy as np
+from numpy.typing import NDArray
+
 from typing import Self
 
 from board import Board
@@ -71,13 +74,33 @@ class GameNode(Board):
         raise Exception("GameNode doesn't support play_stone. Use create_child instead.")
 
 
-    def __bad_play_stone(self, row: int, col: int, move: bool) -> bool:
+    def available_moves_mask(self) -> NDArray:
         """
-        Board.play_stone passthrough for internal GameNode
-        use only.
+        Returns a flat bool array of shape (size**2 + 1, ) indicating
+        which moves are available
+
+        The bool at index 0 <= i represents the move at the
+            position (i // size, i % size)
+        
+        The bool at index size**2 represents the move pass, which is
+            always True
         """
 
-        return super().play_stone(row, col, move)
+        out = np.zeros((self.size**2 + 1, ), dtype=bool)
+
+        for i in range(self.size**2):
+            available = super().play_stone(
+                row = i // self.size,
+                col =  i % self.size,
+                move = False
+            )
+
+            if available:
+                out[i] = True
+        
+        out[-1] = True
+
+        return out
 
 
     def create_child(self, loc: tuple[int, int]) -> Self:
@@ -92,7 +115,7 @@ class GameNode(Board):
 
         child = self.copy()
 
-        if not child.__bad_play_stone(loc[0], loc[1], True):
+        if not super(type(child), child).play_stone(loc[0], loc[1], True):
             raise ValueError(f"Invalid move location \"{loc}\"")
 
         self.nexts.append(child)

@@ -418,35 +418,6 @@ class Board:
         return np.all(self.grid != 0)
 
 
-    def available_moves_mask(self) -> NDArray:
-        """
-        Returns a flat bool array of shape (size**2 + 1, ) indicating
-        which moves are available
-
-        The bool at index 0 <= i represents the move at the
-            position (i // size, i % size)
-        
-        The bool at index size**2 represents the move pass, which is
-            always True
-        """
-
-        out = np.zeros((self.size**2 + 1, ), dtype=bool)
-
-        for i in range(self.size**2):
-            available = self.play_stone(
-                row = i // self.size,
-                col =  i % self.size,
-                move = False
-            )
-
-            if available:
-                out[i] = True
-        
-        out[-1] = True
-
-        return out
-
-
     def available_moves(self) -> list[tuple[int, int]]:
         """
         Returns a list of tuples corresponding to the row and
