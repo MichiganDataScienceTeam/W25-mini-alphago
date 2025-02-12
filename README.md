@@ -28,9 +28,9 @@ Count the number of black stones on a `Board` after playing some moves
 ```py
 board = Board(9)  # Init empty 9x9 Board
 
-board.play_stone(5, 6, 1)  # Black plays at (5, 6)
-board.play_stone(0, 1, 2)  # White plays at (0, 1)
-board.play_stone(0, 0, 1)  # Black plays at (0, 0)
+board.play_stone(5, 6)  # Black plays at (5, 6)
+board.play_stone(0, 1)  # White plays at (0, 1)
+board.play_stone(0, 0)  # Black plays at (0, 0)
 
 print(board)  # Visual board representation
 print(f"Black stones: {(board.grid == 1).sum()}")  # 2
