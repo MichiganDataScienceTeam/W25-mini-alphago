@@ -82,6 +82,33 @@ class ImportedGame:
         
         return head
 
+
+    def d4_transformations(self) -> list[list[tuple[int, int]]]:
+        """
+        Returns a list of all 8 transformations in the
+        dihedral group of a square applied to the move
+        list (includes the identity)
+        """
+
+        size = self.meta["size"]
+
+        rotate_90_clockwise = lambda moves: [(move[1], size - move[0] - 1) for move in moves]
+        vertical_flip = lambda moves: [(size - move[0] - 1, move[1]) for move in moves]
+
+        I = self.moves
+
+        R1 = rotate_90_clockwise(I)
+        R2 = rotate_90_clockwise(R1)
+        R3 = rotate_90_clockwise(R2)
+
+        F1 = vertical_flip(I)
+        F2 = vertical_flip(R2)
+
+        D1 = vertical_flip(R1)
+        D2 = vertical_flip(R3)
+
+        return [I, R1, R2, R3, F1, F2, D1, D2]
+
     
     def __repr__(self):
         return f"ImportedGame({self.path})"
