@@ -68,19 +68,18 @@ class ImportedGame:
 
     def linked_list(self) -> GameNode:
         """
-        Returns the head of a linked list made of
+        Returns the tail of a linked list made of
         GameNodes that represents the game. It is
         guaranteed len(node.nexts) <= 1 for all
         nodes in the linked list
         """
 
-        head = GameNode(9)
-        curr = head
+        curr = GameNode(9)
 
         for move in self.moves:
             curr = curr.create_child(move)
         
-        return head
+        return curr
 
 
     def d4_transformations(self) -> list[list[tuple[int, int]]]:
@@ -124,6 +123,10 @@ if __name__ == "__main__":
 
     game = ImportedGame(GAME_PATH)
     node = game.linked_list()
+
+    # Move to head
+    while node.prev is not None:
+        node = node.prev
 
     while True:
         print(node)
