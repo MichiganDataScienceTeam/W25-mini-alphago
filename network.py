@@ -65,6 +65,36 @@ class NeuralNet(nn.Module):
         x = self.residuals(x)
 
         return x
+    
+class PolicyHead(nn.Module):
+    def __init__(self, in_channels: int, board_size=9):
+        super().__init__()
+        self.board_size = board_size
+
+        # 1. A convolution of 2 filters of kernel size 1 ×1 with stride 1
+        # input channels -> 2 channels
+        self.conv = nn.Conv2d(in_channels, out_channels=2, kernel_size=1, stride=1)
+
+        # 2. Batch normalisation
+        self.bn = nn.BatchNorm2d(2)
+
+        # 3. A rectifier non-linearity
+        self.relu = nn.ReLU()
+
+        # 4. A fully connected linear layer, 
+        # corresponding to logit probabilities for all intersections and the pass move
+        self.fc = nn.Linear(2 * board_size * board_size, board_size * board_size + 1)
+        
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        # flatten to (batch_size, 2*board_size*board_size)
+        x = x.view(x.size(0), -1)
+        
+        return self.fc(x)
+
+
         
 
 if __name__ == "__main__":
