@@ -71,15 +71,6 @@ class GameNode(Board):
         raise Exception("GameNode doesn't support play_stone. Use create_child instead.")
 
 
-    def __bad_play_stone(self, row: int, col: int, move: bool) -> bool:
-        """
-        Board.play_stone passthrough for internal GameNode
-        use only.
-        """
-
-        return super().play_stone(row, col, move)
-
-
     def create_child(self, loc: tuple[int, int]) -> Self:
         """
         Returns the child GameNode after placing a stone at the
@@ -92,7 +83,7 @@ class GameNode(Board):
 
         child = self.copy()
 
-        if not child.__bad_play_stone(loc[0], loc[1], True):
+        if not super(type(child), child).play_stone(loc[0], loc[1], True):
             raise ValueError(f"Invalid move location \"{loc}\"")
 
         self.nexts.append(child)

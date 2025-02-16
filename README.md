@@ -8,9 +8,10 @@ In this project, we will build a modified hybrid of [AlphaGo](https://www.nature
 | --- | --- |
 | 1 | [Slides](https://docs.google.com/presentation/d/1-xUB_iLC-hbhHI7JJtxdNb0yJfJjoJYizdwDDreBi8k/edit?usp=sharing), [Play Online Go](https://online-go.com/), [Computer Go Rules](https://tromp.github.io/go.html)
 | 2 | [Slides](https://docs.google.com/presentation/d/1Tl5gFVL9Pp-qJr6oYB78062bHCQMhRM6sasR86lCWHc/edit?usp=sharing), [NN Arch](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=27), [PyTorch CNN example](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html) |
-| 3 | [Slides](https://docs.google.com/presentation/d/1yF0llAtNVfPCPmMXlIslRqWAPUI-A_-ez7vHlBAoXFc/edit?usp=sharing) |
+| 3 | [Slides](https://docs.google.com/presentation/d/1yF0llAtNVfPCPmMXlIslRqWAPUI-A_-ez7vHlBAoXFc/edit?usp=sharing), [PyTorch Modules](https://pytorch.org/docs/stable/notes/modules.html#modules-as-building-blocks) |
+| 4 | [Slides](https://docs.google.com/presentation/d/1kch18ub-a1Mqck-qaXYb6X_Oq3d1L4-R20YT2aCWkdE/edit?usp=sharing), [SL Description](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=25) |
 
-For a more detailed list of topics and resources, see "This Week in Mini-AlphaGo" (approximately every Wednesday).
+For a more detailed list of topics and resources, check the most recent "This Week in Mini-AlphaGo" email (released every Wednesday afternoon).
 
 ## General Usage
 
@@ -28,9 +29,9 @@ Count the number of black stones on a `Board` after playing some moves
 ```py
 board = Board(9)  # Init empty 9x9 Board
 
-board.play_stone(5, 6, 1)  # Black plays at (5, 6)
-board.play_stone(0, 1, 2)  # White plays at (0, 1)
-board.play_stone(0, 0, 1)  # Black plays at (0, 0)
+board.play_stone(5, 6)  # Black plays at (5, 6)
+board.play_stone(0, 1)  # White plays at (0, 1)
+board.play_stone(0, 0)  # Black plays at (0, 0)
 
 print(board)  # Visual board representation
 print(f"Black stones: {(board.grid == 1).sum()}")  # 2
@@ -59,13 +60,13 @@ while node != None:
 In the following code:
 ```python
 go = Board(9)
-elo = Elo_calculator(game=go, prev_elo_data= "elo_data.pkl")
+elo = Elo_calculator(game=go, prev_elo_data = "elo_data.pkl")
 
 random_player1 = Bot()
 random_player2 = Bot()
 
-elo.register_bot(name= "bob", bot= random_player1)
-elo.register_bot(name = "bobette", bot= random_player2)
+elo.register_bot(name= "bob", bot = random_player1)
+elo.register_bot(name = "bobette", bot = random_player2)
 
 elo.play_match("bob", "bobette")
 
@@ -74,7 +75,7 @@ elo.save("elo_data.pkl")
 We create an elo_calculator object from past elo data, register 2 agents, and run them against each other, saving the data to 'elo_data.pkl'. If you were to run this code again, then the code below would do the same this as the code snippet above:
 ```python
 go = Board(9)
-elo = Elo_calculator(game=go, prev_elo_data= "elo_data.pkl")
+elo = Elo_calculator(game=go, prev_elo_data = "elo_data.pkl")
 
 elo.play_match("bob", "bobette")
 elo.save("elo_data.pkl")
