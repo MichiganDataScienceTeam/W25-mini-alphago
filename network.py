@@ -60,29 +60,47 @@ class ResBlock(nn.Module):
 
 
 class PolicyHead(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
-        # Initialize members
 
-        raise NotImplementedError()
+        self.conv = nn.Conv2d(in_channels, out_channels, 1)
+        self.norm = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU()
+        self.fc = nn.Linear(9*9+1, 9*9+1)
+        self.softmax = nn.Softmax(dim=1)
     
 
     def forward(self, x):
         # Return tensor in the shape of (batch, 9*9 + 1)
-        raise NotImplementedError()
+        out = self.conv(x)
+        out = self.norm(out)
+        out = self.relu(out)
+        out = self.fc(out)
+        out = self.softmax(out)
+
+        return out
 
 
 class ValueHead(nn.Module):
-    def __init__(self):
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
-        # Initialize members
 
-        raise NotImplementedError()
+        self.conv = nn.Conv2d(in_channels, out_channels, 1)
+        self.norm = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU()
+        self.fc1 = nn.Linear(9*9, 1)
+        self.tanh = nn.Tanh()
     
 
     def forward(self, x):
         # Return tensor in the shape of (batch, 1)
-        raise NotImplementedError()
+        out = self.conv(x)
+        out = self.norm(out)
+        out = self.relu(out)
+        out = self.fc1(out)
+        out = self.tanh(out)
+
+        return out
 
 
 class NeuralNet(nn.Module):
