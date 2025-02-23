@@ -15,8 +15,7 @@ class GoLoss(torch.nn.Module):
 
 
 def train(model, epochs=5, batch_size=32):
-    dataset = Dataset()
-    dataset.load_games('games')
+    dataset = Dataset("games")
 
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
@@ -27,9 +26,9 @@ def train(model, epochs=5, batch_size=32):
         for i, (s, z, pi) in enumerate(dataloader):
             optimizer.zero_grad()
 
-            z_hat, pi_hat = model(s)
+            pi_hat, z_hat = model(s)
 
-            loss = criterion(z, z_hat, pi, pi_hat)
+            loss = criterion(z.to(torch.float32), z_hat, pi, pi_hat)
             loss.backward()
 
             optimizer.step()
@@ -41,4 +40,5 @@ def train(model, epochs=5, batch_size=32):
 
 
 if __name__ == "__main__":
-    model = NeuralNet()
+    model = NeuralNet(3, 3, 1).float()
+    train(model)

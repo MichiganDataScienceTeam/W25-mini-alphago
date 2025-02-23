@@ -94,7 +94,7 @@ class GameNode(Board):
         return child
 
 
-    def get_game_data(self, lookback=2) -> np.array:
+    def get_game_data(self, lookback=3) -> np.array:
         """
         Returns a numpy array of white and black board states + past number of historic moves to lookback
         """
