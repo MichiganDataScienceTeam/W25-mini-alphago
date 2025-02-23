@@ -10,6 +10,7 @@ In this project, we will build a modified hybrid of [AlphaGo](https://www.nature
 | 2 | [Slides](https://docs.google.com/presentation/d/1Tl5gFVL9Pp-qJr6oYB78062bHCQMhRM6sasR86lCWHc/edit?usp=sharing), [NN Arch](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=27), [PyTorch CNN example](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html) |
 | 3 | [Slides](https://docs.google.com/presentation/d/1yF0llAtNVfPCPmMXlIslRqWAPUI-A_-ez7vHlBAoXFc/edit?usp=sharing), [PyTorch Modules](https://pytorch.org/docs/stable/notes/modules.html#modules-as-building-blocks) |
 | 4 | [Slides](https://docs.google.com/presentation/d/1kch18ub-a1Mqck-qaXYb6X_Oq3d1L4-R20YT2aCWkdE/edit?usp=sharing), [SL Description](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=25) |
+| 5 | [Slides](https://docs.google.com/presentation/d/1LEbv5XmeUX-hytKAuPFUy0yyKeiUiF1bOkyMBQJuSTI/edit?usp=sharing) |
 
 For a more detailed list of topics and resources, check the most recent "This Week in Mini-AlphaGo" email (released every Wednesday afternoon).
 
