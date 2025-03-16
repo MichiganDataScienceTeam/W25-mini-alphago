@@ -14,7 +14,7 @@ def node_to_tensor(node: GameNode) -> torch.Tensor:
     """
 
     N = node.size
-    LOOKBACK = 4 # Generates the 4*2=8 channels
+    LOOKBACK = 3 # Generates the 4*2=8 channels
 
     # First LOOKBACK * 2 channels
     out = []
