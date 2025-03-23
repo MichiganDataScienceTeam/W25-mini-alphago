@@ -13,7 +13,7 @@ class GoLoss(torch.nn.Module):
         policy_loss = torch.nn.functional.cross_entropy(pi_hat, pi)
 
         return value_loss + policy_loss
-
+    
 
 def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
     dataset = Dataset("games")
@@ -38,9 +38,8 @@ def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
 
 
 
-
 if __name__ == "__main__":
 
     # TODO: Make sure you know model interface
-    model = NeuralNet(7, 7, 3).float()
+    model = NeuralNetwork(7, 7, 3).float()
     train(model)
