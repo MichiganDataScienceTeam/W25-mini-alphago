@@ -1,56 +1,77 @@
-from game_node import GameNode
-import network
+from network import NeuralNet
+from tree_node import TreeNode
+import numpy as np
+
+from numpy.typing import NDArray
+from typing import Tuple
+
 
 class MonteCarlo:
-    '''
-        Monte Carlo Tree Search
+    """
+    Monte Carlo Tree Search
 
-        Wrap Tree Node w/ Evaluation Function
-    '''
+    Wrap Tree Node w/ Evaluation Function
 
-
-class TreeNode(GameNode):
-    def __init__(self, gn: GameNode, num_visits = 0, total_value = 0, prior = 0):
-        self.__dict__.update(gn.__dict__)
-
-        self.num_visits = num_visits
-        self.total_value = total_value
-        self.prior = prior
+    Args:
+        model: the NN to use
+    """
 
 
-    def Q_value(self):
-        return self.total_value / (1 + self.num_visits)
+    def __init__(self, model: NeuralNet, root: TreeNode):
+        self.model = model
+        self.root = root
 
-    def u_value(self):
-        return self.prior / (self.num_visits + 1)
 
-    def create_child(self, loc):  
-        child = self.copy()
-        child = TreeNode(child)
+    def select(self, node: TreeNode) -> TreeNode:
+        """
+        Returns the leaf node from the subtree rooted at node
+        resulting from greedily maximizing Q+U for all children
 
-        self.children.append(child)
-        child.prev = self
-        child.prev_move = loc
-
-        return child
-
-    def is_leaf(self):
-        return len(self.children) == 0
-
-    def get_nodes(self):
-        """ 
-            Returns a list of candidate leaf node(s)
-        
-            Runs the model on the current gamenode, returns n best nodes (moves)
-                1. Take the first part of the tuple from calling forward on model
-                2. Iterate through grid to find the n best moves
+        Args:
+            node: the TreeNode to start selection from
         """
 
-    def evaluate_node():
-        """
-            Move to MonteCarlo
-        """
+        raise NotImplementedError()
     
-    def backprop():        
-        """"""
     
+    def evaluate(self, node: TreeNode) -> Tuple[float, NDArray]:
+        """
+        Get the network's eval (value AND policy) of the current game state
+
+        Consider evaluating on all d8 transformations and taking the mean
+        if model is fast enough
+
+        Args:
+            node: the node to evaluate
+        """
+
+        raise NotImplementedError()
+    
+
+    def expand(self, node: TreeNode, prior: NDArray) -> None:
+        """
+        Adds all valid children to the tree an initializes
+        all values as described in the slides
+
+        Args:
+            node: the TreeNode from select
+            prior: the precomputed output from the policy head
+        """
+
+        raise NotImplementedError()
+
+    
+    def choose_action(self, temperature: float):
+        """
+        Samples an action from the distribution given by the exponentiated visit count, ie:
+        num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
+
+        Note that this must use some random function and is never purely deterministic
+
+        Args:
+            temperature: Hyperparameter from (0, 1] that selects for how much exploration you want the model to perform 
+            (higher more exploration, lower less)
+        """
+
+        raise NotImplementedError()
+
