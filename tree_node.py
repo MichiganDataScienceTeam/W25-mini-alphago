@@ -1,6 +1,6 @@
+from __future__ import annotations
 from game_node import GameNode
 from typing import List, Self
-from __future__ import annotations
 
 
 class TreeNode(GameNode):
@@ -22,6 +22,13 @@ class TreeNode(GameNode):
         self.total_value = total_value
         self.prior = prior
 
+    def __str__(self):
+        return f"""
+        Num visits: {self.num_visits}
+        Total value: {self.total_value}
+        Prior: {self.prior}
+        Board: {super().__str__()}
+        """
 
     def Q_value(self) -> float:
         """ Compute the Q value (average observed eval) of the node """
@@ -45,10 +52,11 @@ class TreeNode(GameNode):
                  or (-1, -1) to pass
         """
 
-        child = self.copy()
+        child = super().copy()
+        super(type(child), child).play_stone(loc[0], loc[1], move = True) #it works ok
         child = TreeNode(child)
 
-        self.children.append(child)
+        self.nexts.append(child)
         child.prev = self
         child.prev_move = loc
 

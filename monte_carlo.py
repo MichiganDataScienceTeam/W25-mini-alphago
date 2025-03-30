@@ -7,6 +7,8 @@ from typing import Tuple
 
 from data_preprocess import node_to_tensor
 
+from game_node import GameNode
+
 
 class MonteCarlo:
     """
@@ -23,6 +25,15 @@ class MonteCarlo:
         self.model = model
         self.root = root
 
+        self.curr = root
+
+    def __str__(self):
+        # return f"""Current node: {str(self.curr)}
+        # Current node children: {'[' + ', '.join([str(a) for a in self.curr.nexts]) + ']'}
+        # """
+        return f"""Current node: {str(self.curr)}
+        Current node children: {'[' + ', '.join([str(a) for a in self.things]) + ']'}
+        """
 
     def select(self, node: TreeNode) -> TreeNode:
         """
@@ -35,7 +46,7 @@ class MonteCarlo:
 
         while not node.is_leaf():
             # Select the child with the highest Q + U value
-            best_child = max(node.children, key=lambda child: child.Q_value() + child.u_value())
+            best_child = max(node.nexts, key=lambda child: child.Q_value() + child.u_value())
             node = best_child
 
         return node
@@ -56,7 +67,7 @@ class MonteCarlo:
         return out[1].item(), out[0].squeeze(0).detach().numpy()
     
 
-    def expand(self, node: TreeNode, prior: NDArray) -> None:
+    def expand(self, node: TreeNode, prior: NDArray, allow_pass: bool = True) -> None:
         """
         Adds all valid children to the tree an initializes
         all values as described in the slides
@@ -66,7 +77,7 @@ class MonteCarlo:
             prior: the precomputed output from the policy head
         """
 
-        node.get_children(allow_pass=True)
+        node.get_children(allow_pass=allow_pass)
         for i, child in enumerate(node.nexts):
             child.num_visits = 0
             child.total_value = 0
@@ -90,3 +101,39 @@ class MonteCarlo:
         action_index = np.random.choice(len(node.nexts), p=probs)
 
         return node.nexts[action_index].prev_move
+    
+
+    # TEMP
+    def search(self) -> None:
+        selected = self.select(self.curr)
+        val, policy = self.evaluate(selected)
+        self.expand(selected, policy, allow_pass=False)
+        selected.backprop(val)
+        self.things.append(selected)
+        print(f"Selected node after search:\n{selected}")
+
+
+if __name__ == "__main__":
+
+    nn = NeuralNet()
+    root_node = GameNode(9)
+    
+    game_tree = MonteCarlo(
+        model=nn,
+        root=TreeNode(root_node)
+    )
+
+    game_tree.things = []
+
+    game_tree.search()
+    game_tree.search()
+    game_tree.search()
+    print(game_tree)
+
+
+    # val, priors = game_tree.evaluate(root_node)
+    # game_tree.expand(root_node, priors)
+
+    # chosen_node = 
+    
+    

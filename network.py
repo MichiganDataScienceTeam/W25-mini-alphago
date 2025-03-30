@@ -81,6 +81,9 @@ class PolicyHead(nn.Module):
         # 4. A fully connected linear layer, 
         # corresponding to logit probabilities for all intersections and the pass move
         self.fc = nn.Linear(2 * board_size * board_size, board_size * board_size + 1)
+
+        # 5. Convert logits to probabilities
+        self.softmax = nn.Softmax(dim=-1)
         
     def forward(self, x):
         x = self.conv(x)
@@ -88,8 +91,9 @@ class PolicyHead(nn.Module):
         x = self.relu(x)
         # flatten to (batch_size, 2*board_size*board_size)
         x = x.view(x.size(0), -1)
+        x = self.fc(x)
         
-        return self.fc(x)
+        return self.softmax(x)
 
 
 class ValueHead(nn.Module):
@@ -157,6 +161,7 @@ class NeuralNet(nn.Module):
         policy = self.policy_head(x)
         value = self.value_head(x)
 
+        
         return policy, value
 
 if __name__ == "__main__":
