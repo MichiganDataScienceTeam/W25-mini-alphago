@@ -69,11 +69,19 @@ class TreeNode(GameNode):
         Args:
             allow_pass: whether to consider pass as a valid move
         """
+        children = []
+        list_of_moves = self.available_moves()
+        for move in list_of_moves:
+            # If pass isn't a valid move, don't include in childen list
+            if not allow_pass and move == (-1, -1):
+                continue
 
-        raise NotImplementedError()
+            children.append(self.create_child(move))
+            
+        return children
 
     
-    def backprop(value):
+    def backprop(self, value):
         """
         Add value to each TreeNode's total_val and increment the num_visits 
         for each TreeNode node up until the root
@@ -81,5 +89,8 @@ class TreeNode(GameNode):
         Args:
             value: The value computed by monte_carlo eval
         """
+        self.num_visits += 1
+        self.total_value += value
 
-        raise NotImplementedError()
+        if self.prev is not None:
+            self.prev.backprop(value)
