@@ -1,6 +1,6 @@
 # Mini-AlphaGo, Winter 2025
 
-In this project, we will build a modified hybrid of [AlphaGo](https://www.nature.com/articles/nature16961) and [AlphaZero](https://www.nature.com/articles/nature24270) for 9x9 Go from almost scratch (using only computational libraries).
+In this project, we will build a modified hybrid of [AlphaGo](https://www.nature.com/articles/nature16961) and [AlphaGo Zero](https://www.nature.com/articles/nature24270) for 9x9 Go from almost scratch (using only computational libraries).
 
 ## Schedule
 
