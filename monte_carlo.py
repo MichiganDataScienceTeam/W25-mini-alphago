@@ -111,6 +111,22 @@ class MonteCarlo:
         val, policy = self.evaluate(selected)
         self.expand(selected, policy, allow_pass=False)
         selected.backprop(val)
+    
+
+    def move_curr(self, loc: Tuple[int, int]) -> None:
+        """
+        Moves the curr node forward by playing the action at loc
+
+        Args:
+            loc: the location of the move to play
+        """
+
+        for child in self.curr.nexts:
+            if child.prev_move == loc:
+                self.curr = child
+                return
+
+        raise ValueError(f"Child from move at {loc} not found. Maybe you forgot to search?")
 
 
 if __name__ == "__main__":
