@@ -1,6 +1,5 @@
 from network import NeuralNet
 from tree_node import TreeNode
-import numpy as np
 
 from numpy.typing import NDArray
 from typing import Tuple
@@ -80,23 +79,20 @@ class MonteCarlo:
             child.prior = prior[i]
 
     
-    def choose_action(self, temperature: float, node: TreeNode) -> Tuple[int, int]:
+    def get_policy(self, temperature: float, node: TreeNode) -> NDArray:
         """
-        Samples an action from the distribution given by the exponentiated visit count, ie:
+        Calculates the MTCS policy given by the exponentiated visit count, ie:
         num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
-
-        Note that this must use some random function and is never purely deterministic
 
         Args:
             temperature: Hyperparameter from (0, 1] that selects for how much exploration you want the model to perform 
             (higher more exploration, lower less)
         """
 
-        denom = sum(child.num_visits ** (1 / temperature) for child in node.nexts)
-        probs = [child.num_visits ** (1 / temperature) / denom for child in node.nexts]
-        action_index = np.random.choice(len(node.nexts), p=probs)
+        denom = sum(child.num_visits ** (1 / temperature) for child in node.nexts) + len(node.nexts)
+        probs = [(child.num_visits ** (1 / temperature) + 1) / denom for child in node.nexts]
 
-        return node.nexts[action_index].prev_move
+        return probs
     
 
     def search(self) -> None:
