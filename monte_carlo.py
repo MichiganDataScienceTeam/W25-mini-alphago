@@ -24,15 +24,11 @@ class MonteCarlo:
     def __init__(self, model: NeuralNet, root: TreeNode):
         self.model = model
         self.root = root
-
         self.curr = root
 
     def __str__(self):
-        # return f"""Current node: {str(self.curr)}
-        # Current node children: {'[' + ', '.join([str(a) for a in self.curr.nexts]) + ']'}
-        # """
         return f"""Current node: {str(self.curr)}
-        Current node children: {'[' + ', '.join([str(a) for a in self.things]) + ']'}
+        Current node children: {'[' + ', '.join([str(a) for a in self.curr.nexts]) + ']'}
         """
 
     def select(self, node: TreeNode) -> TreeNode:
@@ -103,18 +99,21 @@ class MonteCarlo:
         return node.nexts[action_index].prev_move
     
 
-    # TEMP
     def search(self) -> None:
+        """
+        Performs one iteration of search
+
+        Note that this doesn't return a value because the goal of search is improve the tree,
+        not to actually "search" for a specific node.
+        """
+
         selected = self.select(self.curr)
         val, policy = self.evaluate(selected)
         self.expand(selected, policy, allow_pass=False)
         selected.backprop(val)
-        self.things.append(selected)
-        print(f"Selected node after search:\n{selected}")
 
 
 if __name__ == "__main__":
-
     nn = NeuralNet()
     root_node = GameNode(9)
     
@@ -123,17 +122,8 @@ if __name__ == "__main__":
         root=TreeNode(root_node)
     )
 
-    game_tree.things = []
+    game_tree.search()
 
-    game_tree.search()
-    game_tree.search()
-    game_tree.search()
     print(game_tree)
-
-
-    # val, priors = game_tree.evaluate(root_node)
-    # game_tree.expand(root_node, priors)
-
-    # chosen_node = 
     
     
