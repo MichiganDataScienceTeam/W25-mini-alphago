@@ -29,6 +29,9 @@ class TreeNode(GameNode):
         Prior: {self.prior}
         Board: {super().__str__()}
         """
+    
+    def gamenode_str(self):
+        return super().__str__()
 
     def Q_value(self) -> float:
         """ Compute the Q value (average observed eval) of the node """
@@ -56,6 +59,7 @@ class TreeNode(GameNode):
         super(type(child), child).play_stone(loc[0], loc[1], move = True) #it works ok
         child = TreeNode(child)
 
+        child.nexts = []
         self.nexts.append(child)
         child.prev = self
         child.prev_move = loc
