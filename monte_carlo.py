@@ -60,7 +60,7 @@ class MonteCarlo:
         """
 
         out = self.model.forward(node_to_tensor(node).unsqueeze(0))
-        return out[1].item(), out[0].squeeze(0).detach().numpy()
+        return out[1].item(), out[0].squeeze(0).detach().cpu().numpy() # trust me guys it works
     
 
     def expand(self, node: TreeNode, prior: NDArray, allow_pass: bool = True) -> None:
