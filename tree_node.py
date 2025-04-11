@@ -27,7 +27,8 @@ class TreeNode(GameNode):
         Num visits: {self.num_visits}
         Total value: {self.total_value}
         Prior: {self.prior}
-        Board: {super().__str__()}
+        Board:
+        {super().__str__()}
         """
     
     def gamenode_str(self):
