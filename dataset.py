@@ -3,31 +3,9 @@ import torch
 
 from game_node import GameNode
 from imported_game import ImportedGame
-from data_preprocess import node_to_tensor
+from data_preprocess import node_to_tensor, one_hot_policy
 
 from typing import Tuple
-
-
-def human_target_policy(node: GameNode) -> torch.Tensor:
-    """
-    Return a board array with a 1 where the human player moved
-    
-    Args:
-        node: the GameNode *after* the node to get the policy of
-    """
-    
-    idx = -1
-    
-    # Handle pass
-    if node.prev_move == (-1, -1) or node.prev_move is None:
-        idx = node.size ** 2
-    else:
-        idx = node.prev_move[0] * node.size + node.prev_move[1]
-
-    return torch.nn.functional.one_hot(
-        torch.tensor(idx),
-        num_classes=node.size ** 2 + 1
-    ).to(torch.float32)
 
 
 class Dataset:
@@ -82,14 +60,14 @@ class Dataset:
 
         self.start_indices.append(len(self.positional_data))
 
-        last_human_policy = human_target_policy(node)
+        last_human_policy = one_hot_policy(node)
         node = node.prev
 
         while node is not None:
             s = node_to_tensor(node)
             z = torch.tensor([final_eval], dtype=torch.float32)
             pi = last_human_policy
-            last_human_policy = human_target_policy(node)
+            last_human_policy = one_hot_policy(node)
             self.positional_data.append((s, z, pi))
 
             node = node.prev

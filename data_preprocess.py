@@ -4,7 +4,28 @@ import torch
 
 from config import *
 
-# TODO: Add function for creating a data tuple from a GameNode
+
+def one_hot_policy(node: GameNode) -> torch.Tensor:
+    """
+    Return a board array with a 1 where the human player moved
+    
+    Args:
+        node: the GameNode *after* the node to get the policy of
+    """
+    
+    idx = -1
+    
+    # Handle pass
+    if node.prev_move == (-1, -1) or node.prev_move is None:
+        idx = node.size ** 2
+    else:
+        idx = node.prev_move[0] * node.size + node.prev_move[1]
+
+    return torch.nn.functional.one_hot(
+        torch.tensor(idx),
+        num_classes=node.size ** 2 + 1
+    ).to(torch.float32)
+
 
 def node_to_tensor(node: GameNode) -> torch.Tensor:
     """
