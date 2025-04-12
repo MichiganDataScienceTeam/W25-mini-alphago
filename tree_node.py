@@ -2,6 +2,9 @@ from __future__ import annotations
 from game_node import GameNode
 from typing import List, Self
 
+import numpy as np
+
+from config import *
 
 class TreeNode(GameNode):
     """
@@ -43,7 +46,12 @@ class TreeNode(GameNode):
     def u_value(self) -> float:
         """ Compute the U value (decaying prior) of the node """
 
-        return self.prior / (self.num_visits + 1)
+        siblings = 1
+        
+        if self.prev is not None:
+            siblings = np.sqrt(self.prev.num_visits - 1) # Same as sum of siblings including self
+
+        return C_PUCT * self.prior * siblings / (self.num_visits + 1)
 
 
     def create_child(self, loc) -> TreeNode:
