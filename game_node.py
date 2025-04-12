@@ -19,7 +19,7 @@ class GameNode(Board):
 
     def __init__(self, size: int, komi: float = 7.5, move: int = 0,
                  prev: Self = None, prev_move: tuple[int, int] = None,
-                 nexts: list[Self] = []):
+                 nexts: list[Self] = None):
 
         if komi - int(komi) == 0:
             raise ValueError(f"Invalid komi {komi}: komi must contain" +
@@ -33,7 +33,10 @@ class GameNode(Board):
 
         self.prev = prev
         self.prev_move = prev_move
-        self.nexts = nexts
+        if nexts is not None:
+            self.nexts = nexts
+        else:
+            self.nexts = []
 
 
     def copy(self) -> Self:
