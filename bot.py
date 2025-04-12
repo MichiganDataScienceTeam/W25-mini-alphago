@@ -42,7 +42,7 @@ class MonteCarloBot(Bot):
         for i in range(num_searches):
             self.mcts.search()
             
-        probs = self.mcts.get_policy(1.0, self.mcts.curr)
+        probs = self.mcts.curr.get_policy(temperature=1.0)
         action_index = random.choice(len(probs), p=probs)
         move = self.mcts.curr.nexts[action_index].prev_move
         

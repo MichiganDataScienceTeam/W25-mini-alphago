@@ -77,22 +77,6 @@ class MonteCarlo:
             child.num_visits = 0
             child.total_value = 0
             child.prior = prior[i]
-
-    
-    def get_policy(self, temperature: float, node: TreeNode) -> NDArray:
-        """
-        Calculates the MTCS policy given by the exponentiated visit count, ie:
-        num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
-
-        Args:
-            temperature: Hyperparameter from (0, 1] that selects for how much exploration you want the model to perform 
-            (higher more exploration, lower less)
-        """
-
-        denom = sum(child.num_visits ** (1 / temperature) for child in node.nexts) + len(node.nexts)
-        probs = [(child.num_visits ** (1 / temperature) + 1) / denom for child in node.nexts]
-
-        return probs
     
 
     def search(self) -> None:

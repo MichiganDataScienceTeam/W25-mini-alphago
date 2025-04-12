@@ -3,6 +3,7 @@ from game_node import GameNode
 from typing import List, Self
 
 import numpy as np
+import torch
 
 from config import *
 
@@ -115,3 +116,19 @@ class TreeNode(GameNode):
 
         if self.prev is not None:
             self.prev.backprop(value)
+
+
+    def get_policy(self, temperature: float) -> torch.Tensor:
+        """
+        Calculates the MTCS policy given by the exponentiated visit count, ie:
+        num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
+
+        Args:
+            temperature: Hyperparameter from (0, 1] that selects for how much exploration you want the model to perform 
+            (higher more exploration, lower less)
+        """
+
+        denom = sum(child.num_visits ** (1 / temperature) for child in self.nexts) + len(self.nexts)
+        probs = [(child.num_visits ** (1 / temperature) + 1) / denom for child in self.nexts]
+
+        return torch.tensor(probs)
