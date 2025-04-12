@@ -153,12 +153,8 @@ class NeuralNet(nn.Module):
 
         self.policy_head = PolicyHead(out_channels)
         self.value_head = ValueHead(out_channels)
-
-        #this works ??
-        self.to(DEVICE)
         
     def forward(self, x):
-        x = x.to(DEVICE)
         x = self.conv(x)
         x = self.residuals(x)
 
