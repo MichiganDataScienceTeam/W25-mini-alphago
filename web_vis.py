@@ -142,7 +142,7 @@ def get_tree():
     global tree
 
     stringify = lambda node: invert("\n".join(node.gamenode_str().split("\n")[2:]))
-    
+
     q = [(-1, tree.curr)]
     out = []
 
@@ -151,7 +151,10 @@ def get_tree():
         for prev_i, node in [(p, r) for p, r in q if r.num_visits > 0]:
             out.append({
                 "prev": prev_i,
-                "val": stringify(node)
+                "val": stringify(node),
+                "tooltip": f"""Visits: {node.num_visits}
+Q: {node.Q_value():.3f}
+U: {node.u_value():.3f}"""
             })
             nq += [(len(out) - 1, s) for s in node.nexts]
         

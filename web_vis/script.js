@@ -53,7 +53,7 @@ async function updateTree() {
 
     let data_arr = await response.json()
 
-    const makeNode = val => {
+    const makeNode = (val, tooltip) => {
         const node = document.createElement("div")
         const p = document.createElement("pre")
         const children = document.createElement("div")
@@ -61,6 +61,7 @@ async function updateTree() {
         node.classList.add("node")
         children.classList.add("children")
         p.textContent = val
+        p.setAttribute("style", "--tooltip: \"" + tooltip.replaceAll("\n", "\\00000A") + "\";")
         node.appendChild(p)
         node.appendChild(children)
 
@@ -69,18 +70,19 @@ async function updateTree() {
 
     console.log(data_arr)
 
-    let elt_arr = [makeNode(data_arr.shift()["val"])]
+    const first_data = data_arr.shift()
+    let elt_arr = [makeNode(first_data["val"], first_data["tooltip"])]
 
     console.log(data_arr)
 
     for (const x of data_arr) {
-        const new_node = makeNode(x["val"])
+        const new_node = makeNode(x["val"], x["tooltip"])
         const parent = elt_arr[x["prev"]]
         parent["children"].appendChild(new_node["node"])
         elt_arr.push(new_node)
     }
 
-    tree.removeChild(tree.lastChild)
+    tree.innerHTML = ""
     tree.appendChild(elt_arr[0]["node"])
 }
 
