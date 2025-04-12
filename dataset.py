@@ -2,6 +2,7 @@ import os
 import torch
 
 from game_node import GameNode
+from tree_node import TreeNode
 from imported_game import ImportedGame
 from data_preprocess import node_to_tensor, one_hot_policy
 
@@ -46,10 +47,10 @@ class Dataset:
             node = this_game.linked_list()
             final_eval = this_game.meta.get("final_eval")
 
-            self.add_game(node, final_eval)
+            self.add_sl_game(node, final_eval)
 
 
-    def add_game(self, node: GameNode, final_eval: float) -> None:
+    def add_sl_game(self, node: GameNode, final_eval: float) -> None:
         """
         Adds a game to the dataset
 
@@ -68,6 +69,26 @@ class Dataset:
             z = torch.tensor([final_eval], dtype=torch.float32)
             pi = last_human_policy
             last_human_policy = one_hot_policy(node)
+            self.positional_data.append((s, z, pi))
+
+            node = node.prev
+
+
+    def add_rl_game(self, node: TreeNode, final_eval: float) -> None:
+        """
+        Adds a game to the dataset
+
+        Args:
+            node: the last TreeNode in the game
+            final_eval: the final eval {-1, 1} of the game
+        """
+
+        self.start_indices.append(len(self.positional_data))
+
+        while node is not None:
+            s = node_to_tensor(node)
+            z = torch.tensor([final_eval], dtype=torch.float32)
+            pi = node.get_policy(temperature=1)
             self.positional_data.append((s, z, pi))
 
             node = node.prev
