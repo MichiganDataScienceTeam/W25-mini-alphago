@@ -87,7 +87,7 @@ class Dataset:
 
         while node is not None:
             s = node_to_tensor(node)
-            z = torch.tensor(final_eval, dtype=torch.float32)
+            z = torch.tensor([final_eval], dtype=torch.float32)
             pi = last_human_policy
             last_human_policy = human_target_policy(node)
             self.positional_data.append((s, z, pi))

@@ -21,8 +21,8 @@ def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
     train_ds.load_dir("games")
     train_dl = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True)
 
-    val_ds = Dataset("val_games")
-    val_ds.load_dir("games")
+    val_ds = Dataset()
+    val_ds.load_dir("val_games")
     val_dl = torch.utils.data.DataLoader(val_ds, batch_size=batch_size)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
