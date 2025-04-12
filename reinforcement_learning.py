@@ -24,7 +24,7 @@ def self_play(bot: MonteCarloBot, num_moves: int = 250, verbose: bool = False):
         # Policy is 82 len array, policy[0] is moving on top left corner, policy[81] is passing, etc.
         BOARD_SIZE = bot.mcts.curr.size
         policy = [0] * ((BOARD_SIZE * BOARD_SIZE) + 1)
-        probs = bot.mcts.get_policy(1.0, bot.mcts.curr)
+        probs = bot.mcts.curr.get_policy(temperature=1.0)
 
         for i, child in enumerate(bot.mcts.curr.nexts):
             prev_move = child.prev_move
