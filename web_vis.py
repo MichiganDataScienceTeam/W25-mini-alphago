@@ -55,9 +55,10 @@ def search():
 search()
 
 # Game node utils
+invert = lambda s: s.replace("○", "B").replace("●", "W").replace("W", "○").replace("B", "●")
+
 def small_string(node: GameNode):
     global SIZE
-    invert = lambda s: s.replace("○", "B").replace("●", "W").replace("W", "○").replace("B", "●")
     return "\n".join([invert(s.replace(" ", "")[-SIZE:]) for s in str(node).split("\n")[3:]])
 
 # Flask things (assumes model behaves well)
@@ -101,7 +102,7 @@ def get_board():
 def reset():
     global tree, SIZE
 
-    tree = MonteCarlo(model, TreeNode(GameNode(SIZE)))
+    tree.curr = TreeNode(GameNode(SIZE))
 
     search()
 
@@ -138,13 +139,16 @@ def network():
 
 @app.route("/get_tree", methods=["POST"])
 def get_tree():
-    stringify = lambda node: "\n".join(node.gamenode_str().split("\n")[2:]).replace("○", "B").replace("●", "W").replace("W", "○").replace("B", "●")
+    global tree
+
+    stringify = lambda node: invert("\n".join(node.gamenode_str().split("\n")[2:]))
+    
     q = [(-1, tree.curr)]
     out = []
 
     while len(q) != 0:
         nq = []
-        for prev_i, node in [(p, r) for p, r in q if r.num_visits > 0]: 
+        for prev_i, node in [(p, r) for p, r in q if r.num_visits > 0]:
             out.append({
                 "prev": prev_i,
                 "val": stringify(node)
