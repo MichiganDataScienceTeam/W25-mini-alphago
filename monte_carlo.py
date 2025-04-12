@@ -8,7 +8,6 @@ from data_preprocess import node_to_tensor
 
 from game_node import GameNode
 
-
 class MonteCarlo:
     """
     Monte Carlo Tree Search
@@ -40,8 +39,9 @@ class MonteCarlo:
         """
 
         while not node.is_leaf():
-            # Select the child with the highest Q + U value
-            best_child = max(node.nexts, key=lambda child: child.Q_value() + child.u_value())
+            # Select the child with the best Q + U value
+            coef = 1 if (node.move % 2) == 0 else -1
+            best_child = max(node.nexts, key=lambda child: coef * child.Q_value() + child.u_value())
             node = best_child
 
         return node
