@@ -241,6 +241,8 @@ main {
     padding: 0.5rem;
     border: 0.1em solid black;
     visibility: hidden;
+    box-shadow: 0 0 0.5rem 0.1rem rgba(0, 0, 0, 0.3);
+    pointer-events: none;
 }
 
 .node pre:hover::before {

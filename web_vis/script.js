@@ -68,12 +68,8 @@ async function updateTree() {
         return {"node": node, "p": p, "children": children}
     }
 
-    console.log(data_arr)
-
     const first_data = data_arr.shift()
     let elt_arr = [makeNode(first_data["val"], first_data["tooltip"])]
-
-    console.log(data_arr)
 
     for (const x of data_arr) {
         const new_node = makeNode(x["val"], x["tooltip"])
