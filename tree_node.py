@@ -128,7 +128,9 @@ class TreeNode(GameNode):
             (higher more exploration, lower less)
         """
 
-        denom = sum(child.num_visits ** (1 / temperature) for child in self.nexts) + len(self.nexts)
-        probs = [(child.num_visits ** (1 / temperature) + 1) / denom for child in self.nexts]
+        logits = np.array([child.num_visits for child in self.nexts]) ** ((1 / temperature) + 1)
+
+        denom = logits.sum()
+        probs = logits/denom
 
         return torch.tensor(probs)
