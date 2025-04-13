@@ -43,6 +43,10 @@ class MonteCarloBot(Bot):
             self.mcts.search()
             
         probs = self.mcts.curr.get_policy(temperature=1.0)
+        
+        if len(probs) == 0:
+            return (-1, -1)
+            
         action_index = random.choice(len(probs), p=probs)
         move = self.mcts.curr.nexts[action_index].prev_move
         
@@ -51,4 +55,3 @@ class MonteCarloBot(Bot):
     
     def make_move(self, move: tuple[int, int]) -> None:
         self.mcts.move_curr(move)
-

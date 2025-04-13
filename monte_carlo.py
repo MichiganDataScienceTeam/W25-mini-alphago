@@ -71,9 +71,14 @@ class MonteCarlo:
             node: the TreeNode from select
             prior: the precomputed output from the policy head
         """
+        if node.is_terminal():
+            return
 
         node.get_children(allow_pass=allow_pass)
         for i, child in enumerate(node.nexts):
+            if i == 82:
+                print(node.nexts)
+                print(len(node.nexts))
             child.num_visits = 0
             child.total_value = 0
             child.prior = prior[i]
@@ -89,7 +94,10 @@ class MonteCarlo:
 
         selected = self.select(self.curr)
         val, policy = self.evaluate(selected)
-        self.expand(selected, policy, allow_pass=False)
+        if (self.curr.move > 71):
+            self.expand(selected, policy, allow_pass=True)
+        else: 
+            self.expand(selected, policy, allow_pass=False)
         selected.backprop(val)
     
 
