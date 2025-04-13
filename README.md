@@ -15,6 +15,7 @@ In this project, we will build a modified hybrid of [AlphaGo](https://www.nature
 | 7 | [Slides](https://docs.google.com/presentation/d/1wIUXCe9MaicW_u0sWpuu7ez-zFpV4AijGfOX_aeQJbA/edit?usp=sharing), [AGZ MCTS Algorithm](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=25) |
 | 8 | [Slides](https://docs.google.com/presentation/d/1BjuzCKrI5Vfv_F5P5DK3Sx71WJa6JHJf2YE8hAVNCw0/edit?usp=sharing) |
 | 9 | [Slides](https://docs.google.com/presentation/d/1G-nk0L82hz_oKPSu5gVLuP0IPvvzAgibMXir0PsA7E0/edit?usp=sharing), [AGZ Self-Play](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=24) |
+| 10 | [Slides](https://docs.google.com/presentation/d/1xUUn0M5ybaiBdqf3to-zYb7lVD8xvjtTtmi1IMmWr9c/edit?usp=sharing), [AGZ Self-Play](https://discovery.ucl.ac.uk/id/eprint/10045895/1/agz_unformatted_nature.pdf#page=24) |
 
 For a more detailed list of topics and resources, check the most recent "This Week in Mini-AlphaGo" email (released every Wednesday afternoon).
 
