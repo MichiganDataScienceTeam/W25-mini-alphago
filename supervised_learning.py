@@ -1,20 +1,9 @@
 import torch
+
 from dataset import Dataset
 from network import NeuralNet
 from config import *
-
-class GoLoss(torch.nn.Module):
-    def __init__(self, mse_weight: float = 1):
-        self.mse_weight = mse_weight
-        super().__init__()
-
-    def forward(self, z, z_hat, pi, pi_hat):
-        """ z is the value of the game, pi is the policy vector, z_hat and pi_hat are the predicted values """
-        value_loss = torch.nn.functional.mse_loss(z_hat, z) * self.mse_weight
-        policy_loss = torch.nn.functional.cross_entropy(pi_hat, pi)
-
-        return value_loss + policy_loss
-
+from network import GoLoss
 
 def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
     train_ds = Dataset()

@@ -1,9 +1,13 @@
+import torch
+
 from bot import MonteCarloBot
-import json
+from dataset import Dataset
+from network import GoLoss
+
+from config import *
 
 
-
-def self_play(bot: MonteCarloBot, num_moves: int = 250, verbose: bool = False):
+def self_play(bot: MonteCarloBot, num_moves: int = MAX_MOVES, verbose: bool = False):
     """
     Plays a game of self-play using the bot.
 
@@ -12,28 +16,16 @@ def self_play(bot: MonteCarloBot, num_moves: int = 250, verbose: bool = False):
 
     # Log the moves and policies
     moves = []
-    policies = []
+
+    bot.reset_tree()
 
     # Play the game
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < num_moves:
 
-        move = bot.choose_move()
+        move = bot.choose_move(SEARCHES_PER_MOVE)
         bot.make_move(move)
 
         moves.append(move)
-
-        # Policy is 82 len array, policy[0] is moving on top left corner, policy[81] is passing, etc.
-        BOARD_SIZE = bot.mcts.curr.size
-        policy = [0] * ((BOARD_SIZE * BOARD_SIZE) + 1)
-        probs = bot.mcts.curr.get_policy(temperature=1.0)
-
-        for i, child in enumerate(bot.mcts.curr.nexts):
-            prev_move = child.prev_move
-            if prev_move == (-1, -1):
-                policy[BOARD_SIZE * BOARD_SIZE] = probs[i].item()
-            else:
-                policy[prev_move[0] * BOARD_SIZE + prev_move[1]] = probs[i].item()
-        policies.append(policy)
 
         if verbose:
             print(f"Move {bot.mcts.curr.move}: {move}")
@@ -41,12 +33,78 @@ def self_play(bot: MonteCarloBot, num_moves: int = 250, verbose: bool = False):
 
     return (bot.mcts.curr, bot.mcts.curr.compute_winner())
 
-    #return {'moves': moves, 'policies': policies, 'winner': bot.mcts.curr.compute_winner()}
+
+def create_dataset() -> Dataset:
+    """
+    Creates a new dataset for RL with the specific
+    number of games in the config
+    """
+
+    out = Dataset()
+
+    for _ in range(RL_DS_SIZE):
+        tree, winner = self_play(bot)
+        out.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
+    
+    return out
 
 
+def update_dataset(ds: Dataset) -> None:
+    """
+    Replaces the oldest n sets of game data with
+    newly generated game data as specified in the config
+    """
+
+    ds.remove_first_n(NEW_GAMES_PER_DS)
+
+    for _ in range(NEW_GAMES_PER_DS):
+        tree, winner = self_play(bot)
+        ds.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
+
+
+def train_one_epoch(ds: Dataset, bot: MonteCarloBot) -> float:
+    """
+    Trains a bot for one epoch on the produced dataset
+
+    Args:
+        ds: Dataset to train on
+        bot: bot containing the model to train
+    """
+
+    dl = torch.utils.data.DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True)
+
+    optimizer = torch.optim.AdamW(bot.model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+    criterion = GoLoss(1) # Balanced cross-entropy and mse
+
+    train_loss = 0
+    bot.model = bot.model.to(DEVICE)
+    bot.model.train()
+
+    for s, z, pi in dl:
+        s = s.to(DEVICE)
+        z = z.to(DEVICE)
+        pi = pi.to(DEVICE)
+
+        optimizer.zero_grad()
+
+        pi_hat, z_hat = bot.model(s)
+        
+        loss = criterion(z, z_hat, pi, pi_hat)
+        train_loss += loss.item()
+        loss.backward()
+
+        optimizer.step()
+    
+    return train_loss / len(dl)
+  
 
 if __name__ == "__main__":
     bot = MonteCarloBot()
-    game_data = self_play(bot, verbose=True)
-    # with open("game_data.json", "w") as f:
-    #     json.dump(game_data, f)
+    
+    ds = create_dataset()
+
+    for i in range(EPOCHS):
+        print(f"Epoch {i+1} - Training Loss: ", end="")
+        print(train_one_epoch(ds, bot))
+        update_dataset(ds)
+

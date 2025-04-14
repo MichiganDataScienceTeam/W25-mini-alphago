@@ -1,8 +1,10 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+
 from game_node import GameNode
 from data_preprocess import node_to_tensor
 from config import *
+
 
 class ConvBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel: int):
@@ -139,7 +141,6 @@ class ValueHead(nn.Module):
         return torch.tanh(x)
 
 
-
 class NeuralNet(nn.Module):
     def __init__(self, in_channels: int = INPUT_CHANNELS, out_channels: int = OUTPUT_CHANNELS, kernel: int = KERNEL, num_residuals: int = NUM_RESIDUALS):
         super().__init__()
@@ -163,6 +164,19 @@ class NeuralNet(nn.Module):
 
         
         return policy, value
+
+
+class GoLoss(torch.nn.Module):
+    def __init__(self, mse_weight: float = 1):
+        self.mse_weight = mse_weight
+        super().__init__()
+
+    def forward(self, z: torch.Tensor, z_hat: torch.Tensor, pi: torch.Tensor, pi_hat: torch.Tensor):
+        value_loss = torch.nn.functional.mse_loss(z_hat, z) * self.mse_weight
+        policy_loss = torch.nn.functional.cross_entropy(pi_hat, pi)
+
+        return value_loss + policy_loss
+
 
 if __name__ == "__main__":
     # Defining board and running game

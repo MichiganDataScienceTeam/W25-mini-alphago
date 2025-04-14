@@ -26,6 +26,7 @@ class TreeNode(GameNode):
         self.total_value = total_value
         self.prior = prior
 
+
     def __str__(self):
         return f"""
         Num visits: {self.num_visits}
@@ -34,9 +35,11 @@ class TreeNode(GameNode):
         Board:
         {super().__str__()}
         """
-    
+
+
     def gamenode_str(self):
         return super().__str__()
+
 
     def Q_value(self) -> float:
         """ Compute the Q value (average observed eval) of the node """
@@ -118,22 +121,24 @@ class TreeNode(GameNode):
             self.prev.backprop(value)
 
 
-    def get_policy(self, temperature: float) -> torch.Tensor:
+    def get_policy(self) -> torch.Tensor:
         """
         Calculates the MTCS policy given by the exponentiated visit count, ie:
         num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
-
-        Args:
-            temperature: Hyperparameter from (0, 1] that selects for how much exploration you want the model to perform 
-            (higher more exploration, lower less)
+        Ordered by nexts
         """
 
-        logits = np.array([child.num_visits for child in self.nexts]) ** ((1 / temperature) + 1)
+        logits = np.array([child.num_visits + 1 for child in self.nexts])
 
-        denom = logits.sum()
-        probs = logits/denom
+        if self.move < NUM_MOVES_MAX_TEMP:
+            logits = logits ** (1 / 1)
+        else:
+            logits = logits ** (1 / .1)
+
+        probs = logits / logits.sum()
 
         return torch.tensor(probs)
+
 
     def is_terminal(self) -> bool:
         # First, check if the game is terminal by other means.
@@ -148,3 +153,4 @@ class TreeNode(GameNode):
                 return True
 
         return False
+

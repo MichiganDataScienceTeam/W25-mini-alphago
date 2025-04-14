@@ -8,6 +8,8 @@ from data_preprocess import node_to_tensor
 
 from game_node import GameNode
 
+from config import *
+
 class MonteCarlo:
     """
     Monte Carlo Tree Search
@@ -20,7 +22,7 @@ class MonteCarlo:
 
 
     def __init__(self, model: NeuralNet, root: TreeNode):
-        self.model = model
+        self.model = model.to(DEVICE)
         self.root = root
         self.curr = root
 
@@ -58,7 +60,7 @@ class MonteCarlo:
             node: the node to evaluate
         """
 
-        out = self.model.forward(node_to_tensor(node).unsqueeze(0))
+        out = self.model.forward(node_to_tensor(node).unsqueeze(0).to(DEVICE))
         return out[1].item(), out[0].squeeze(0).detach().cpu().numpy() # trust me guys it works
     
 
@@ -77,7 +79,7 @@ class MonteCarlo:
         node.get_children(allow_pass=allow_pass)
         for i, child in enumerate(node.nexts):
             if i == 82:
-                print(node.nexts)
+                print(len(set(node.nexts)))
                 print(len(node.nexts))
             child.num_visits = 0
             child.total_value = 0

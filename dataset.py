@@ -1,6 +1,8 @@
 import os
 import torch
 
+import random
+
 from game_node import GameNode
 from tree_node import TreeNode
 from imported_game import ImportedGame
@@ -74,7 +76,7 @@ class Dataset:
             node = node.prev
 
 
-    def add_rl_game(self, node: TreeNode, final_eval: float) -> None:
+    def add_rl_game(self, node: TreeNode, final_eval: float, keep_prob: float) -> None:
         """
         Adds a game to the dataset
 
@@ -88,9 +90,21 @@ class Dataset:
         while node is not None:
             s = node_to_tensor(node)
             z = torch.tensor([final_eval], dtype=torch.float32)
-            pi = node.get_policy(temperature=1)
-            self.positional_data.append((s, z, pi))
+            probs = node.get_policy()
 
+            BOARD_SIZE = node.size
+            pi = torch.zeros(BOARD_SIZE * BOARD_SIZE + 1)
+
+            for i, child in enumerate(node.nexts):
+                prev_move = child.prev_move
+                if prev_move == (-1, -1):
+                    pi[BOARD_SIZE * BOARD_SIZE] = probs[i].item()
+                else:
+                    pi[prev_move[0] * BOARD_SIZE + prev_move[1]] = probs[i].item()
+
+            if random.random() < keep_prob:
+                self.positional_data.append((s, z, pi))
+            
             node = node.prev
 
 

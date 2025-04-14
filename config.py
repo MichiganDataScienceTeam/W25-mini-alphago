@@ -6,11 +6,19 @@ NUM_RESIDUALS = 19
 
 # Search parameters
 C_PUCT = 5
+SEARCHES_PER_MOVE = 32
 
 # Training parameters
 LEARNING_RATE = .001
 EPOCHS = 100
 BATCH_SIZE = 64
+
+# RL params
+SELF_PLAY_KEEP_PROB = 0.3
+RL_DS_SIZE = 1_024
+NEW_GAMES_PER_DS = 512
+NUM_MOVES_MAX_TEMPERATURE = 32
+MAX_MOVES = 9*9*2
 
 # Device
 import torch
