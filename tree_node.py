@@ -130,7 +130,7 @@ class TreeNode(GameNode):
 
         logits = np.array([child.num_visits + 1 for child in self.nexts])
 
-        if self.move < NUM_MOVES_MAX_TEMP:
+        if self.move < NUM_MOVES_MAX_TEMPERATURE:
             logits = logits ** (1 / 1)
         else:
             logits = logits ** (1 / .1)

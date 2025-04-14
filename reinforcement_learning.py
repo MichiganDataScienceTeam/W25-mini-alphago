@@ -101,10 +101,15 @@ def train_one_epoch(ds: Dataset, bot: MonteCarloBot) -> float:
 if __name__ == "__main__":
     bot = MonteCarloBot()
     
+    print("Building initial dataset... ", end="")
     ds = create_dataset()
+    print("Done")
 
     for i in range(EPOCHS):
         print(f"Epoch {i+1} - Training Loss: ", end="")
         print(train_one_epoch(ds, bot))
+
+        print("Rebuilding dataset... ", end="")
         update_dataset(ds)
+        print("Done")
 
