@@ -34,7 +34,7 @@ def self_play(bot: MonteCarloBot, num_moves: int = MAX_MOVES, verbose: bool = Fa
     return (bot.mcts.curr, bot.mcts.curr.compute_winner())
 
 
-def create_dataset() -> Dataset:
+def create_dataset(bot: MonteCarloBot) -> Dataset:
     """
     Creates a new dataset for RL with the specific
     number of games in the config

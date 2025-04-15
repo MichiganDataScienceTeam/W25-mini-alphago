@@ -177,6 +177,43 @@ class GoLoss(torch.nn.Module):
 
         return value_loss + policy_loss
 
+def save_model(model: nn.Module, filepath: str) -> None:
+    """
+    Save a PyTorch model's state_dict and config
+
+    Args:
+        model: the NeuralNet instance
+        filepath: the file to save to
+    """
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'config': {
+            'in_channels': model.conv.conv.in_channels,
+            'out_channels': model.conv.conv.out_channels,
+            'kernel': model.conv.conv.kernel_size[0],
+            'num_residuals': len(model.residuals)
+        }
+    }, filepath)
+    print(f"Model saved to {filepath}")
+
+
+def load_model(filepath: str) -> NeuralNet:
+    """
+    Load a NeuralNet model from a file
+
+    Args:
+        filepath: the file to load from
+
+    Returns:
+        NeuralNet: the loaded model
+    """
+    checkpoint = torch.load(filepath)
+    config = checkpoint['config']
+
+    model = NeuralNet(**config)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    print(f"Model loaded from {filepath}")
+    return model
 
 if __name__ == "__main__":
     # Defining board and running game

@@ -7,6 +7,7 @@ from game_node import GameNode
 from tree_node import TreeNode
 from imported_game import ImportedGame
 from data_preprocess import node_to_tensor, one_hot_policy
+from config import *
 
 from typing import Tuple
 
@@ -76,7 +77,7 @@ class Dataset:
             node = node.prev
 
 
-    def add_rl_game(self, node: TreeNode, final_eval: float, keep_prob: float) -> None:
+    def add_rl_game(self, node: TreeNode, final_eval: float, keep_prob:float = SELF_PLAY_KEEP_PROB) -> None:
         """
         Adds a game to the dataset
 
@@ -120,4 +121,29 @@ class Dataset:
         start_index = self.start_indices[0]
         self.start_indices = [i - start_index for i in self.start_indices]
         self.positional_data = self.positional_data[start_index:]
+
+    def save(self, filepath: str) -> None:
+        """
+        Saves the dataset to a file using PyTorch's serialization
+
+        Args:
+            filepath: destination file path to save the dataset
+        """
+        torch.save({
+            'positional_data': self.positional_data,
+            'start_indices': self.start_indices
+        }, filepath)
+        print(f"Dataset saved to {filepath}")
+
+    def load(self, filepath: str) -> None:
+        """
+        Loads the dataset from a file
+
+        Args:
+            filepath: source file path to load the dataset from
+        """
+        data = torch.load(filepath)
+        self.positional_data = data['positional_data']
+        self.start_indices = data['start_indices']
+        print(f"Dataset loaded from {filepath}")
 
