@@ -10,7 +10,7 @@ SEARCHES_PER_MOVE = 32
 
 # Training parameters
 LEARNING_RATE = .001
-EPOCHS = 100_000 #
+EPOCHS = 100_000
 BATCH_SIZE = 64
 
 # RL params

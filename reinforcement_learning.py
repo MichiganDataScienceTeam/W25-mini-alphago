@@ -1,5 +1,7 @@
 import torch
 
+from tqdm import tqdm
+
 from bot import MonteCarloBot
 from dataset import Dataset
 from network import GoLoss
@@ -34,7 +36,7 @@ def self_play(bot: MonteCarloBot, num_moves: int = MAX_MOVES, verbose: bool = Fa
     return (bot.mcts.curr, bot.mcts.curr.compute_winner())
 
 
-def create_dataset(bot: MonteCarloBot) -> Dataset:
+def create_dataset(bot: MonteCarloBot, tqdm_desc: str = "") -> Dataset:
     """
     Creates a new dataset for RL with the specific
     number of games in the config
@@ -42,14 +44,14 @@ def create_dataset(bot: MonteCarloBot) -> Dataset:
 
     out = Dataset()
 
-    for _ in range(RL_DS_SIZE):
+    for _ in tqdm(range(RL_DS_SIZE), desc=tqdm_desc):
         tree, winner = self_play(bot)
         out.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
     
     return out
 
 
-def update_dataset(ds: Dataset) -> None:
+def update_dataset(ds: Dataset, bot: MonteCarloBot, tqdm_desc: str = "") -> None:
     """
     Replaces the oldest n sets of game data with
     newly generated game data as specified in the config
@@ -57,7 +59,7 @@ def update_dataset(ds: Dataset) -> None:
 
     ds.remove_first_n(NEW_GAMES_PER_DS)
 
-    for _ in range(NEW_GAMES_PER_DS):
+    for _ in tqdm(range(NEW_GAMES_PER_DS), desc=tqdm_desc):
         tree, winner = self_play(bot)
         ds.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
 
