@@ -35,7 +35,7 @@ class MonteCarloBot(Bot):
     
 
     def reset_tree(self) -> None:
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)))
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device)
 
 
     def choose_move(self, num_searches: int = 10) -> tuple[int, int]:

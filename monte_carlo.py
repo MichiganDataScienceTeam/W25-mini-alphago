@@ -17,7 +17,8 @@ class MonteCarlo:
     Wrap Tree Node w/ Evaluation Function
 
     Args:
-        model: the NN to use
+        model: the NN to use (assumes is on cpu)
+        root: root of the tree
     """
 
 
@@ -26,11 +27,13 @@ class MonteCarlo:
         self.model = model.to(self.device)
         self.root = root
         self.curr = root
+    
 
     def __str__(self):
         return f"""Current node: {str(self.curr)}
         Current node children: {'[' + ', '.join([str(a) for a in self.curr.nexts]) + ']'}
         """
+
 
     def select(self, node: TreeNode) -> TreeNode:
         """
