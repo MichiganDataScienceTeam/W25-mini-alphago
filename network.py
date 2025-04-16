@@ -177,14 +177,16 @@ class GoLoss(torch.nn.Module):
 
         return value_loss + policy_loss
 
-def save_model(model: nn.Module, filepath: str) -> None:
+def save_model(model: nn.Module, filepath: str, prefix: str = "Model saved to") -> None:
     """
     Save a PyTorch model's state_dict and config
 
     Args:
         model: the NeuralNet instance
         filepath: the file to save to
+        prefix: prefix of the print message
     """
+
     torch.save({
         'model_state_dict': model.state_dict(),
         'config': {
@@ -194,10 +196,11 @@ def save_model(model: nn.Module, filepath: str) -> None:
             'num_residuals': len(model.residuals)
         }
     }, filepath)
-    print(f"Model saved to {filepath}")
+
+    print(f"{prefix} {filepath}")
 
 
-def load_model(filepath: str) -> NeuralNet:
+def load_model(filepath: str, prefix: str = "Model loaded from") -> NeuralNet:
     """
     Load a NeuralNet model from a file
 
@@ -206,13 +209,16 @@ def load_model(filepath: str) -> NeuralNet:
 
     Returns:
         NeuralNet: the loaded model
+        prefix: prefix of the print message
     """
-    checkpoint = torch.load(filepath)
+
+    checkpoint = torch.load(filepath, weights_only=False)
     config = checkpoint['config']
 
     model = NeuralNet(**config)
     model.load_state_dict(checkpoint['model_state_dict'])
-    print(f"Model loaded from {filepath}")
+    print(f"{prefix} {filepath}")
+    
     return model
 
 if __name__ == "__main__":

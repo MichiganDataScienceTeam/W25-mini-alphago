@@ -1,5 +1,6 @@
 from config import *
-from reinforcement_learning import create_dataset, update_dataset, train_one_epoch
+from reinforcement_learning import train_one_epoch
+from mp_self_play import create_dataset, update_dataset
 from bot import MonteCarloBot
 from network import NeuralNet, save_model, load_model
 
@@ -7,33 +8,39 @@ from network import NeuralNet, save_model, load_model
 def main():
     print_init()
 
+    MODEL_PATH = "./Great_Lakes_Weights.pt"
+    DS_PATH = "./Great_Lakes_DS.pt"
+
     print("Loading model ... ", end="")
     model = NeuralNet()
     print("Done")
+
+    save_model(model, MODEL_PATH)
 
     print("Loading bot ... ", end="")
     bot = MonteCarloBot(model=model)
     print("Done", end="\n\n")
     
-    ds = create_dataset(bot, tqdm_desc="Building initial dataset")
-    print("")
+    print("Building initial dataset...")
+    ds = create_dataset(MODEL_PATH, PROCESSES, RL_DS_SIZE//PROCESSES, True)
 
     for i in range(EPOCHS):
         print(f"Epoch {i+1}")
         print(f"  Training Loss: {train_one_epoch(ds, bot)}")
 
         print("  ", end="")
-        save_model(model, "./Great_Lakes_Weights.pt")
+        save_model(model, MODEL_PATH)
 
         try:
-            update_dataset(ds, bot, tqdm_desc="  Rebuilding dataset: ")
+            print("Rebuilding dataset:")
+            update_dataset(ds, MODEL_PATH, PROCESSES, NEW_GAMES_PER_DS//PROCESSES, True)
         except KeyboardInterrupt:
             raise KeyboardInterrupt()
         except:
-            print("  Failed")
+            print("Failed")
 
         print("  ", end="")
-        ds.save("./Great_Lakes_DS.pt")
+        ds.save(DS_PATH)
 
 
 def print_init():

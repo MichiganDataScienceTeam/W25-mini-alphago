@@ -5,6 +5,8 @@ from monte_carlo import MonteCarlo
 from tree_node import TreeNode
 from game_node import GameNode
 
+from config import *
+
 
 class Bot:
     def __init__(self):
@@ -24,12 +26,12 @@ class Bot:
 
 
 class MonteCarloBot(Bot):
-    def __init__(self, model: NeuralNet = NeuralNet()):
+    def __init__(self, model: NeuralNet = NeuralNet(), device: str = DEVICE):
         """
         Add whatever member variables you want
         """
         self.model = model
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)))
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), device)
     
 
     def reset_tree(self) -> None:
@@ -56,6 +58,6 @@ class MonteCarloBot(Bot):
         
         return move
     
-    
+
     def make_move(self, move: tuple[int, int]) -> None:
         self.mcts.move_curr(move)

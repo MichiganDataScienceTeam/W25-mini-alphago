@@ -21,8 +21,9 @@ class MonteCarlo:
     """
 
 
-    def __init__(self, model: NeuralNet, root: TreeNode):
-        self.model = model.to(DEVICE)
+    def __init__(self, model: NeuralNet, root: TreeNode, device: str = DEVICE):
+        self.device = device
+        self.model = model.to(self.device)
         self.root = root
         self.curr = root
 
@@ -60,7 +61,9 @@ class MonteCarlo:
             node: the node to evaluate
         """
 
-        out = self.model.forward(node_to_tensor(node).unsqueeze(0).to(DEVICE))
+        self.model.eval()
+        with torch.no_grad():
+            out = self.model.forward(node_to_tensor(node).unsqueeze(0).to(self.device))
         return out[1].item(), out[0].squeeze(0).detach().cpu().numpy() # trust me guys it works
     
 
@@ -96,7 +99,7 @@ class MonteCarlo:
 
         selected = self.select(self.curr)
         val, policy = self.evaluate(selected)
-        if (self.curr.move > 71):
+        if (self.curr.move > NUM_MOVES_ALLOW_PASS):
             self.expand(selected, policy, allow_pass=True)
         else: 
             self.expand(selected, policy, allow_pass=False)

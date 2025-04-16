@@ -9,7 +9,7 @@ from network import GoLoss
 from config import *
 
 
-def self_play(bot: MonteCarloBot, num_moves: int = MAX_MOVES, verbose: bool = False):
+def self_play(bot: MonteCarloBot, verbose: bool = False):
     """
     Plays a game of self-play using the bot.
 
@@ -22,7 +22,7 @@ def self_play(bot: MonteCarloBot, num_moves: int = MAX_MOVES, verbose: bool = Fa
     bot.reset_tree()
 
     # Play the game
-    while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < num_moves:
+    while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
         move = bot.choose_move(SEARCHES_PER_MOVE)
         bot.make_move(move)
