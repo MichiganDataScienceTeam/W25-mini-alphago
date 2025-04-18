@@ -3,7 +3,7 @@ import torch
 from dataset import Dataset
 from network import NeuralNet
 from config import *
-from network import GoLoss
+from network import GoLoss, save_model
 
 def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
     train_ds = Dataset()
@@ -53,10 +53,12 @@ def train(model, epochs=EPOCHS, batch_size=BATCH_SIZE):
             val_loss += loss.item()
 
         print(f"Val Loss: {val_loss/len(val_dl)}")
-        torch.save(model.state_dict(), f"models/model_epoch_{epoch + 1}.pt")
+        # torch.save(model.state_dict(), f"models/model_epoch_{epoch + 1}.pt")
 
 if __name__ == "__main__":
 
     # TODO: Make sure you know model interface
     model = NeuralNet().to(DEVICE)
-    train(model)
+    train(model, epochs=5)
+
+    save_model(model, "SL_wieghts.pt")

@@ -1,8 +1,13 @@
-import pickle
+import json
 from typing import Any
 from board import Board
-from bot import Bot
+from tree_node import TreeNode
+from game_node import GameNode
+from bot import Bot, RandomBot, SupervisedLearningBot, MonteCarloBot
+from network import NeuralNet, load_model
 from random import randint
+import random
+
 
 
 class Elo_calculator:
@@ -11,9 +16,8 @@ class Elo_calculator:
     of agents against each other and the counting of their elo
     """
 
-    def __init__(self, game: Board, max_elo = 100, prev_elo_data =  None):
+    def __init__(self, game: Board, max_elo = 200, prev_elo_data =  None):
         self.game = game
-        self.game_root = game
         #Dict storing key information needed to track and count a player's elo (elo, strategy), with some arb string 'name' as the key
         self.players = {}
         self.max_gain = max_elo
@@ -40,18 +44,23 @@ class Elo_calculator:
         Save the current instance to a pickle file.
         """
 
-        with open(file_path, 'wb') as file:
-            pickle.dump(self.__dict__, file)
+        elo_data = {}
+        for key, value in self.players.items():
+            elo_data[key] = value[0]
+
+        with open(file_path, 'w') as file:
+            json.dump(elo_data, file)
         print(f"Data saved to {file_path}")
 
+    #TODO: Write with json instead
     def load(self, file_path):
         """
         Load data from a pickle file and set it as attributes.
         """
         
         try:
-            with open(file_path, 'rb') as file:
-                data = pickle.load(file)
+            with open(file_path, 'r') as file:
+                data = json.load(file)
             if isinstance(data, dict):
                 self.__dict__.update(data)
                 print(f"Data loaded from {file_path}")
@@ -83,10 +92,10 @@ class Elo_calculator:
         #Use the game node class to simulate the running of these 2 agents till the end of the game
         while(not self.game.is_terminal()):
             move = (0,0)
-            if self.game.turn == 1:
-                move = player1.choose_move(self.game)
+            if self.game.move == 1:
+                move = player1.choose_move(game = self.game)
             else:
-                move = player2.choose_move(self.game)
+                move = player2.choose_move(game = self.game)
 
             self.game = self.game.create_child(move)
 
@@ -99,17 +108,20 @@ class Elo_calculator:
         if p1_new_elo > 0:
             self.players[name1][0] = p1_new_elo
         else:
-            self.players[name1][0] = 0
+            self.players[name1][0] = 50
 
 
         if p2_new_elo > 0:
             self.players[name2][0] = p2_new_elo
         else:
-            self.players[name2][0] = 0
+            self.players[name2][0] = 50
 
 
-        #reset the game to its starting state
-        self.game = self.game_root
+        #reset the game to its starting state,
+        #the idea behind this is that the other 2 bots hold a reference to the self.game instance managed by the elo calculator
+        self.game = TreeNode(GameNode(9))
+        # player1.reset_tree(self.game)
+        # player2.reset_tree(self.game)
 
         return name1 if result == 1 else name2
             
@@ -140,19 +152,35 @@ class Elo_calculator:
 
 if __name__ == "__main__":
     
-    go = Board(9)
+    # go = Board(9)
+    go = TreeNode(GameNode(9))
 
-    elo = Elo_calculator(game=go, prev_elo_data= "elo_data.pkl")
+    elo = Elo_calculator(game=go, prev_elo_data= "elo_data.json")
     print(elo.__dict__)
 
-    random_player1 = Bot()
-    random_player2 = Bot()
+    random_player = RandomBot()
 
-    elo.register_bot(name= "bob", strategy= random_player1)
-    elo.register_bot(name = "bobette", strategy= random_player2)
+    sl_model = load_model("./model_weights/SL_weights.pt")
+    sl_notree = SupervisedLearningBot(model = sl_model)
+    sl_tree = MonteCarloBot(model = sl_model)
 
-    for i in range(10):
-        print(elo.play_match("bob", "bobette"))
+    rl_model = load_model("./model_weights/Great_Lakes_Weights.pt")
+    rl_notree = SupervisedLearningBot(model=rl_model)
+    rl_tree = MonteCarloBot(model = rl_model)
+
+    elo.register_bot(name = "Random_Player", bot= random_player)
+    elo.register_bot(name = "Supervised_Learning_No_Tree", bot= sl_notree)
+    elo.register_bot(name = "Supervised_Learning_Tree", bot= sl_tree)
+    elo.register_bot(name = "Reinforcement_Learning_No_Tree", bot= rl_notree)
+    elo.register_bot(name = "Reinforcement_Learning_Tree", bot= rl_tree)
+
+    players = ["Random_Player", "Supervised_Learning_No_Tree", "Supervised_Learning_Tree", "Reinforcement_Learning_No_Tree", "Reinforcement_Learning_Tree"]
+
+    for i in range(1_000):
+        if i % 50 == 0:
+            elo.save("elo_data.json")
+        player_list = random.choices(players, k = 2)
+        print(elo.play_match(player_list[0],player_list[1]))
 
    
-    elo.save("elo_data.pkl")
+    elo.save("elo_data.json")
