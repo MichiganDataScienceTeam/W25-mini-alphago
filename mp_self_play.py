@@ -34,6 +34,9 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
         n: the index of this worker
     """
 
+    torch.set_num_threads(1)
+    os.sched_setaffinity(0, {n})
+
     # Use cpu for self-play, moving lots of small data is bad
     # Also, the multiprocessing becomes very demanding if shared gpu
     bot = MonteCarloBot(model, "cpu")
@@ -46,7 +49,7 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
 
         temp_ds.add_rl_game(tree, winner)
 
-        print("X", end="")
+        print(n, end="", flush=True)
 
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
@@ -63,6 +66,9 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         games_per_process: the number of games played by each process
         verbose: whether or not to write logs
     """
+
+    torch.set_num_threads(1)
+    os.sched_setaffinity(0, {0})
 
     if verbose:
         start_time = perf_counter()
