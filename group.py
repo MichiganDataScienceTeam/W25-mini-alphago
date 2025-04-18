@@ -1,3 +1,6 @@
+import numpy as np
+from numpy.typing import NDArray
+
 from typing import Self
 
 class Group:
@@ -12,8 +15,8 @@ class Group:
     """
 
 
-    def __init__(self, intersections: set[int], borders: set[int],
-                 liberties: set[int], group_type: int) -> None:
+    def __init__(self, intersections: NDArray, borders: NDArray,
+                 liberties: NDArray, group_type: int) -> None:
         self.intersections = intersections
         self.borders = borders
         self.liberties = liberties
@@ -23,7 +26,7 @@ class Group:
     def __str__(self) -> str:
         """Return only intersections and liberties"""
 
-        return f"Ints: {self.intersections} Libs: {self.liberties}"
+        return f"Ints: {np.nonzero(self.intersections)[0]} Libs: {np.nonzero(self.liberties)[0]}"
 
 
     def __repr__(self) -> str:
@@ -56,8 +59,8 @@ class Group:
         self.borders |= other.borders
         self.liberties |= other.liberties
 
-        self.borders -= self.intersections
-        self.liberties -= self.intersections
+        self.borders &= ~self.intersections
+        self.liberties &= ~self.intersections
 
         if not self.liberties <= self.borders:
             raise NotImplementedError("Oops")
@@ -76,28 +79,28 @@ class Group:
             new_stone_group: Group containing exactly 1 stone
         """
 
-        if len(new_stone_group.intersections) != 1:
+        if new_stone_group.intersections.sum() != 1:
             raise ValueError("new_stone_group must have exactly one intersection")
         
         out = []
         need_union = [new_stone_group]
         
-        new_stone = list(new_stone_group.intersections)[0]
+        new_stone = np.argmax(new_stone_group.intersections)
 
         # Split groups
         for group in groups:
-            if new_stone in group.borders and group.group_type == new_stone_group.group_type:
+            if group.borders[new_stone] and group.group_type == new_stone_group.group_type:
                 need_union.append(group.copy())
             else:
                 out.append(group.copy())
         
         # Union groups of same stone containing the new stone as a liberty
-        new_intersections = set().union(*[group.intersections for group in need_union])
-        new_borders = set().union(*[group.borders for group in need_union])
-        new_liberties = set().union(*[group.liberties for group in need_union])
+        new_intersections = np.logical_or.reduce([group.intersections for group in need_union])
+        new_borders = np.logical_or.reduce([group.borders for group in need_union])
+        new_liberties = np.logical_or.reduce([group.liberties for group in need_union])
 
-        new_borders -= new_intersections
-        new_liberties -= new_intersections
+        new_borders &= ~new_intersections
+        new_liberties &= ~new_intersections
 
         unioned = Group(
             intersections=new_intersections,
@@ -111,12 +114,12 @@ class Group:
         
         # New stone cannot be liberty
         for group in out:
-            group.liberties -= {new_stone}
+            group.liberties[new_stone] = 0
         
         return out
 
 
-    def replenish_liberties(self, opens: set[int]) -> set[int]:
+    def replenish_liberties(self, opens: NDArray) -> set[int]:
         """
         Adds back liberties after intersections were captured
         Returns the resulting set of liberties
@@ -141,7 +144,7 @@ class Group:
         """
 
         for group in groups:
-            self.liberties -= group.intersections
+            self.liberties &= ~group.intersections
         
         return self.liberties
 

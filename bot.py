@@ -35,10 +35,11 @@ class MonteCarloBot(Bot):
     
 
     def reset_tree(self) -> None:
+        self.mcts.reset()
         self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device)
 
 
-    def choose_move(self, num_searches: int = 10) -> tuple[int, int]:
+    def choose_move(self, num_searches: int = 10) -> TreeNode:
         """
         This function takes in the board at the current state, and outputs the move it wants to take as a tuple of ints
 
@@ -54,9 +55,7 @@ class MonteCarloBot(Bot):
             return (-1, -1)
 
         action_index = random.choice(len(probs), p=probs)
-        move = self.mcts.curr.nexts[action_index].prev_move
-        
-        return move
+        return self.mcts.curr.nexts[action_index]
     
 
     def make_move(self, move: tuple[int, int]) -> None:

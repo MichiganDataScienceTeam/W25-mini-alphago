@@ -35,6 +35,23 @@ class MonteCarlo:
         """
 
 
+    def reset(self):
+        temp = self.root
+        self.curr = None
+
+        self.delete_node(temp)
+
+        del temp
+
+
+    def delete_node(self, node: TreeNode):
+        for child in node.nexts:
+            if child is not None:
+                self.delete_node(child)
+        
+        del node
+
+
     def select(self, node: TreeNode) -> TreeNode:
         """
         Returns the leaf node from the subtree rooted at node
@@ -83,12 +100,9 @@ class MonteCarlo:
             return
 
         node.get_children(allow_pass=allow_pass)
-        for i, child in enumerate(node.nexts):
-            if i == 82:
-                print(len(set(node.nexts)))
-                print(len(node.nexts))
-            child.num_visits = 0
-            child.total_value = 0
+        for child in node.nexts:
+            move = child.prev_move
+            i = move[0] * self.curr.size + move[1]
             child.prior = prior[i]
     
 

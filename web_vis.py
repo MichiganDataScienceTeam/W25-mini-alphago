@@ -86,6 +86,8 @@ def play_move():
     if not tree.curr.is_valid_move(data["row"], data["col"]):
         return jsonify({"error": f"Specified location {data['row'], data['col']} is an invalid move"}), 400
 
+    raise NotImplementedError("Need to update to move away from move_curr structure.")
+    # New version should do a linear search to find the correct child
     tree.move_curr((data["row"], data["col"]))
 
     search()

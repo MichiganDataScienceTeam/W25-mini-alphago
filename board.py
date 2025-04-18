@@ -184,7 +184,7 @@ class Board:
         filled = set()
 
         for group in self.groups:
-            filled |= group.intersections
+            filled |= set(np.nonzero(group.intersections)[0])
         
         empty -= filled
 
@@ -299,17 +299,17 @@ class Board:
 
         # Case 1: Capture opponent stone
         for group in self.groups:
-            if (group.group_type != val) and (len(group.liberties - {loc}) > 0):
+            if (group.group_type != val) and (group.liberties.sum() == 1) and group.liberties[loc]:
                 return self.__play_stone(row, col, False)
         
         # Case 2: No immediate liberties
         n_liberties = 0
 
         for i, j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                if (not (0 <= row + i < self.size)) or (not (0 <= col + j < self.size)):
-                    continue
+            if (not (0 <= row + i < self.size)) or (not (0 <= col + j < self.size)):
+                continue
 
-                n_liberties += self.grid[row + i, col + j] == 0
+            n_liberties += self.grid[row + i, col + j] == 0
 
         if n_liberties == 0:
             return self.__play_stone(row, col, False)
@@ -368,8 +368,8 @@ class Board:
         candidate[row, col] = val
 
         # Find borders and liberties for new stone
-        borders = set()
-        liberties = set()
+        borders = np.zeros(self.size * self.size, dtype=bool)
+        liberties = np.zeros(self.size * self.size, dtype=bool)
 
         for i, j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             # Prevent out of bounds
@@ -383,14 +383,16 @@ class Board:
             idx = self.size * (row + i) + (col + j)
 
             # All adjacent are candidate borders
-            borders.add(idx)
+            borders[idx] = 1
 
             # All empty borders are candidate liberties
             if self.grid[row + i, col + j] == 0:
-                liberties.add(idx)
+                liberties[idx] = 1
         
         # Create new stone group
-        new_stone_group = Group(intersections = {self.size * row + col},
+        temp = np.zeros(self.size * self.size, dtype=bool)
+        temp[self.size * row + col] = 1
+        new_stone_group = Group(intersections = temp,
                                 borders = borders,
                                 liberties = liberties,
                                 group_type = val)
@@ -404,7 +406,7 @@ class Board:
         # Compute captures
         new_candidate_groups = []
 
-        captured = set()
+        captured = np.zeros(self.size * self.size, dtype=bool)
 
         for group in candidate_groups:
             # Skip same color
@@ -412,7 +414,7 @@ class Board:
                 continue
 
             # Add if there are still liberties
-            if len(group.liberties) > 0:
+            if group.liberties.any():
                 new_candidate_groups.append(group)
                 continue
             
@@ -429,13 +431,13 @@ class Board:
             if group.group_type != val:
                 continue
 
-            if len(group.liberties) == 0:
+            if not group.liberties.any():
                 return False
             
             new_candidate_groups.append(group)
 
         # Remove captured stones from the board
-        for i in captured:
+        for i in set(np.nonzero(captured)[0]):
             candidate[i // self.size, i % self.size] = 0
 
         candidate_groups = new_candidate_groups
@@ -478,18 +480,17 @@ class Board:
         The tuple (-1, -1) corresponds with the move to pass
         """
 
-        out = [(-1, -1)] # Players can always pass
+        SIZE = self.size
 
-        for i in range(self.size):
-            for j in range(self.size):
-                available = self.is_valid_move(
-                    row = i,
-                    col = j
-                )
-
-                if available:
-                    out.append((i, j))
+        out = [(k // SIZE, k % SIZE)
+               for k in range(SIZE * SIZE)
+               if self.is_valid_move(
+                   k // SIZE,
+                   k % SIZE
+               )]
         
+        out.append((-1, -1)) # Players can always pass
+
         return out
 
 

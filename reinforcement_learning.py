@@ -13,7 +13,8 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     """
     Plays a game of self-play using the bot.
 
-    num_moves: The number of moves to cap at
+    Args:
+        verbose: toggle display every move
     """
 
     # Log the moves and policies
@@ -24,8 +25,9 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     # Play the game
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
-        move = bot.choose_move(SEARCHES_PER_MOVE)
-        bot.make_move(move)
+        new_curr = bot.choose_move(SEARCHES_PER_MOVE)
+        bot.mcts.curr = new_curr
+        move = new_curr.prev_move
 
         moves.append(move)
 
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     bot = MonteCarloBot()
     
     print("Building initial dataset... ", end="")
-    ds = create_dataset()
+    ds = create_dataset(bot)
     print("Done")
 
     for i in range(EPOCHS):

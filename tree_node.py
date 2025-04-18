@@ -68,12 +68,9 @@ class TreeNode(GameNode):
                  or (-1, -1) to pass
         """
 
-        child = super().copy()
-        super(type(child), child).play_stone(loc[0], loc[1], move = True) #it works ok
-        child = TreeNode(child)
+        child = TreeNode(super().copy())
+        child.play_stone(loc[0], loc[1], move = True) #it works ok
 
-        child.nexts = []
-        self.nexts.append(child)
         child.prev = self
         child.prev_move = loc
 
@@ -94,16 +91,13 @@ class TreeNode(GameNode):
         Args:
             allow_pass: whether to consider pass as a valid move
         """
-        children = []
-        list_of_moves = self.available_moves()
-        for move in list_of_moves:
-            # If pass isn't a valid move, don't include in childen list
-            if not allow_pass and move == (-1, -1):
-                continue
 
-            children.append(self.create_child(move))
-            
-        return children
+        self.nexts = [self.create_child(move) for move in self.available_moves()]
+
+        if not allow_pass:
+            self.nexts.pop()
+        
+        return self.nexts
 
     
     def backprop(self, value):

@@ -1,4 +1,3 @@
-import numpy as np
 from typing import Self
 
 from board import Board
@@ -48,7 +47,7 @@ class GameNode(Board):
             move = self.move,
             prev = self.prev,
             prev_move = self.prev_move,
-            nexts = self.nexts.copy()
+            nexts = []
         )
 
         # Board deep copy
@@ -63,16 +62,6 @@ class GameNode(Board):
         Board.board_index += 1
 
         return res
-
-
-    def play_stone(self, row: int, col: int, move: bool) -> None:
-        """
-        GameNode shouldn't support play_stone because it violates
-        tree invariants. create_child handles the tree components
-        while maintaining the same general function
-        """
-
-        raise Exception("GameNode doesn't support play_stone. Use create_child instead.")
 
 
     def create_child(self, loc: tuple[int, int]) -> Self:
@@ -90,9 +79,6 @@ class GameNode(Board):
         if not super(type(child), child).play_stone(loc[0], loc[1], True):
             raise ValueError(f"Invalid move location \"{loc}\"")
 
-        self.nexts.append(child)
-
-        child.nexts = []
         child.prev = self
         child.prev_move = loc
 
@@ -108,7 +94,10 @@ if __name__ == "__main__":
             row = int(input("Row: "))
             col = int(input("Column: "))
 
-            board = board.create_child((row, col))
+            next_board = board.create_child((row, col))
+            board.nexts.append(next_board)
+            board = next_board
+
             print(board.get_game_data())
             print(board.get_game_data().shape)
 
