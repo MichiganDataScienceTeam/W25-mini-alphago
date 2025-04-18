@@ -16,6 +16,14 @@ TEMP_FILE_PATH = "temp_files"
 TEMP_FILE_PREFIX = "temp_ds_file"
 
 
+def set_start_method_auto() -> None:
+    """
+    Sets multiprocessing start method
+    """
+
+    mp.set_start_method('spawn', force=True)
+
+
 def worker(model: NeuralNet, games: int, n: int) -> float:
     """
     Runs one self-play game and saves its positional data
@@ -41,17 +49,6 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
         print("X", end="")
 
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
-
-
-def set_start_method_auto() -> None:
-    """
-    Sets multiprocessing start method
-    """
-
-    if platform.system() == 'Windows' or platform.system() == 'Darwin':
-        mp.set_start_method('spawn', force=True)
-    else:
-        mp.set_start_method('fork', force=True)
 
 
 def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process: int, verbose=False) -> None:
