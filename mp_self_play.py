@@ -38,6 +38,8 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
 
         temp_ds.add_rl_game(tree, winner)
 
+        print("X", end="")
+
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
 
@@ -72,7 +74,10 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         os.mkdir(TEMP_FILE_PATH)
     elif len(os.listdir(TEMP_FILE_PATH)) > 0:
         raise FileExistsError("Temp file path must start empty if it exists")
-        
+    
+    print("Multiprocessing Progress:")
+    print("X"*(n_processes * games_per_process))
+
     processes = []
     for i in range(1, n_processes+1):
         p = mp.Process(target=worker, args=(model, games_per_process, i))
@@ -93,7 +98,7 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         os.remove(filepath)
     
     if verbose:
-        print(f"  Finished in {perf_counter() - start_time}s")
+        print(f"\n  Finished in {perf_counter() - start_time}s")
 
 
 def create_dataset(model_path: str, n_processes: int, games_per_process: int, verbose: bool = False) -> Dataset:
