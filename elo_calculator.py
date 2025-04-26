@@ -16,7 +16,7 @@ class Elo_calculator:
     of agents against each other and the counting of their elo
     """
 
-    def __init__(self, game: Board, max_elo = 200, prev_elo_data =  None):
+    def __init__(self, game: Board, max_elo = 250, prev_elo_data =  None):
         self.game = game
         #Dict storing key information needed to track and count a player's elo (elo, strategy), with some arb string 'name' as the key
         self.players = {}
@@ -176,10 +176,11 @@ if __name__ == "__main__":
 
     players = ["Random_Player", "Supervised_Learning_No_Tree", "Supervised_Learning_Tree", "Reinforcement_Learning_No_Tree", "Reinforcement_Learning_Tree"]
 
-    for i in range(1_000):
-        if i % 50 == 0:
-            elo.save("elo_data.json")
-        player_list = random.choices(players, k = 2)
+    for i in range(1, 1_000):
+        if i % 10 == 0:
+            print("="*25 + "saving" + "="*25)
+            elo.save("elo_datal.json")
+        player_list = random.choices(players[1:], k = 2)
         print(elo.play_match(player_list[0],player_list[1]))
 
    
