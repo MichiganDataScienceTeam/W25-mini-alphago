@@ -212,7 +212,7 @@ def load_model(filepath: str, prefix: str = "Model loaded from") -> NeuralNet:
         prefix: prefix of the print message
     """
 
-    checkpoint = torch.load(filepath, weights_only=False)
+    checkpoint = torch.load(filepath, weights_only=False, map_location=torch.device('cpu'))
     config = checkpoint['config']
 
     model = NeuralNet(**config)
