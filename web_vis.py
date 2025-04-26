@@ -9,7 +9,7 @@ from flask import Flask, request, jsonify
 import torch
 
 from game_node import GameNode
-from network import NeuralNet
+from network import NeuralNet, load_model
 
 from data_preprocess import node_to_tensor
 
@@ -17,14 +17,14 @@ from tree_node import TreeNode
 from monte_carlo import MonteCarlo
 
 # Model setup
-MODEL_STATE_DICT_PATH = "model.pt" # Update this as needed
+MODEL_PATH = "model.pt" # Update this as needed
 
 model = NeuralNet()
 
 try:
-    model.load_state_dict(torch.load(MODEL_STATE_DICT_PATH, weights_only=True))
+    model = load_model(MODEL_PATH)
 except:
-    print(f"Failed to load model at {MODEL_STATE_DICT_PATH}")
+    print(f"Failed to load model at {MODEL_PATH}")
 
     res = ""
 
@@ -43,7 +43,8 @@ temp_node = GameNode(SIZE)
 # MCTS setup
 tree = MonteCarlo(
     model,
-    TreeNode(temp_node)
+    TreeNode(temp_node),
+    device = "cpu"
 )
 
 def search():
@@ -86,10 +87,14 @@ def play_move():
     if not tree.curr.is_valid_move(data["row"], data["col"]):
         return jsonify({"error": f"Specified location {data['row'], data['col']} is an invalid move"}), 400
 
-    raise NotImplementedError("Need to update to move away from move_curr structure.")
     # New version should do a linear search to find the correct child
-    tree.move_curr((data["row"], data["col"]))
-
+    for child in tree.curr.nexts:
+        if child.prev_move == (data["row"], data["col"]):
+            tree.curr = child
+            break
+    else:
+        raise ValueError(f"Unable to find child for move at {data['row'], data['col']}")
+    
     search()
 
     return "Good", 200
