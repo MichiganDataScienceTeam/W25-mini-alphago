@@ -39,6 +39,11 @@ class MonteCarlo:
 
 
     def reset(self):
+        """
+        Deletes all tree nodes including root
+        This instance should not be used after calling reset
+        """
+
         temp = self.root
         self.curr = None
 
@@ -48,6 +53,13 @@ class MonteCarlo:
 
 
     def delete_node(self, node: TreeNode):
+        """
+        Deletes the given node and all children
+
+        Args:
+            node: the root of the subtree to delete
+        """
+
         for child in node.nexts:
             if child is not None:
                 self.delete_node(child)
