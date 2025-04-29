@@ -1,26 +1,18 @@
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 import json
 
 def create_graph(data_path = "./elo_data.json", filename_path = "Elo_data.png"):
-    # with open(data_path, "r") as file:
-    #     data = json.load(file)
-    # Provided data
-
-    data = {
-        "Random_Player": 50,
-        "Supervised_Learning_No_Tree": 360.97881517090735,
-        "Supervised_Learning_Tree": 50,
-        "Reinforcement_Learning_No_Tree": 245.25506595336094,
-        "Reinforcement_Learning_Tree": 467.75690596722126
-    }
-
+    with open(data_path, "r") as file:
+        data = json.load(file)
+    
+    fig, ax = plt.subplots()
+    
     colors = {
-        "Random_Player": "cornflowerblue",
-        "Supervised_Learning_No_Tree": "royalblue",
-        "Supervised_Learning_Tree": "slateblue",
-        "Reinforcement_Learning_No_Tree": "mediumorchid",
-        "Reinforcement_Learning_Tree": "darkorchid"
+        "Random": "cornflowerblue",
+        "SL_No_Tree": "royalblue",
+        "SL_Tree": "slateblue",
+        "RL_No_Tree": "mediumorchid",
+        "RL_Tree": "darkorchid"
     }
 
     # Extract labels and values
@@ -28,36 +20,26 @@ def create_graph(data_path = "./elo_data.json", filename_path = "Elo_data.png"):
     values = list(data.values())
     bar_colors = [colors[label] for label in labels]
 
-    label_title = ["Random Player", "SL No Tree", "SL Tree", "RL No Tree", "RL Tree"]
-    
+    label_title = ["Random", "SL", "SL Tree", "RL", "RL Tree"]
 
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    ax.bar(label_title, values, color=bar_colors, zorder=2)
+
+    plt.xticks(rotation=0, fontsize = 14)
+    plt.yticks(fontsize = 14)
+
+    plt.ylim(0, 1400)
+
+    plt.ylabel("Elo Rating", fontsize = 14)
+
+    ax.grid(axis="y", zorder=1)
+
+    fig.tight_layout()
     plt.figure(figsize=(10, 6))
-    plt.axhline(y=50, color='Black', linestyle='dotted', linewidth=2, label='Baseline (50)')
 
-    plt.text(
-    x=-1.225,        # x-position just to the left of the first bar
-    y=51,          # a bit above the line for clarity
-    s="Floor (50)", 
-    color='Black',
-    fontsize=10,
-    va='bottom'
-    )
-
-    plt.bar(label_title, values, color=bar_colors)
-
-    plt.xticks(rotation=30, ha='right', fontsize = 14)
-
-
-    # Custom legend
-    # legend_elements = [Patch(facecolor=colors[label], label=label) for label in labels]
-    # plt.legend(handles=legend_elements, title="Model Type")
-
-    plt.ylabel("Elo Rating", fontsize = 16)
-
-    # plt.title("Elo Score of different models")
-
-    plt.tight_layout()
-    plt.savefig(filename_path)
+    fig.savefig(filename_path)
 
 
 if __name__ == "__main__":

@@ -1,47 +1,63 @@
 import json
-from typing import Any
-from board import Board
+from random import randint
+from itertools import combinations
+
+from typing import Tuple
+
 from tree_node import TreeNode
 from game_node import GameNode
 from bot import Bot, RandomBot, SupervisedLearningBot, MonteCarloBot
-from network import NeuralNet, load_model
-from random import randint
-import random
-
+from network import load_model
 
 
 class Elo_calculator:
     """
-    The Elo caluclator class will be a class that manages the playing
-    of agents against each other and the counting of their elo
+    Manages games between players and tracks elo ratings
+
+    Args:
+        min_elo: global minimum elo for players
+        max_gain: aka the "K-factor" for elo calculations
+        default_elo: the initial elo
+        prev_elo_data: path to elo json (overwrites other params)
     """
 
-    def __init__(self, game: Board, max_elo = 250, prev_elo_data =  None):
-        self.game = game
-        #Dict storing key information needed to track and count a player's elo (elo, strategy), with some arb string 'name' as the key
-        self.players = {}
-        self.max_gain = max_elo
 
-        #Load the data saved from the previous elo counter
-        if(prev_elo_data):
+    def __init__(self, min_elo: int = 50, max_gain: int = 250, default_elo: int = 1000, prev_elo_data: str = None):
+        self.game = TreeNode(GameNode(9))
+        
+        # Tracker player info and elo: Dict[name: str, List[elo: float, strategy: Bot]]
+        self.players = {}
+        self.min_elo = min_elo
+        self.max_gain = max_gain
+        self.default_elo = default_elo
+
+        # Load the data saved from the previous elo counter
+        if prev_elo_data is not None:
             self.load(prev_elo_data)
-    
+
+
     def register_bot(self, name: str, bot: Bot):
         """
         This function will take in some strategy and name for that strategy, and create a 'player' 
         entry for it so we can track and store its elo
+
+        Args:
+            name: the player's name
+            bot: the Bot object that plays
         """
 
         if name in self.players.keys():
-            print(f"Error. Name {name} is registered under this elo tracker")
-            return 
+            raise ValueError(f"Name {name} not found")
         
-        player = [100, bot]
-        self.players[name] = player
+        self.players[name] = [self.default_elo, bot]
 
-    def save(self, file_path):
+
+    def save(self, file_path: str):
         """
-        Save the current instance to a pickle file.
+        Save the current instance to a json file
+
+        Args:
+            file_path: path to json file to save to
         """
 
         elo_data = {}
@@ -50,138 +66,155 @@ class Elo_calculator:
 
         with open(file_path, 'w') as file:
             json.dump(elo_data, file)
+        
         print(f"Data saved to {file_path}")
 
-    #TODO: Write with json instead
+
     def load(self, file_path):
         """
-        Load data from a pickle file and set it as attributes.
+        Load data from a json file
         """
         
-        try:
-            with open(file_path, 'r') as file:
-                data = json.load(file)
-            if isinstance(data, dict):
-                self.__dict__.update(data)
-                print(f"Data loaded from {file_path}")
-            else:
-                raise ValueError("The pickle file does not contain a valid dictionary.")
-        except Exception as e:
-            print(f"Failed to load data: {e}")
-
-    def play_match(self, name1: str, name2: str) -> str:
-        """
-        This function will take in the names of each player, and run a match between them, 
-        returning the name of the winner, and updating each player's elo score
-        """
-
-        if name1 not in self.players.keys() or name2 not in self.players.keys():
-            print("Error, not a registered player name")
-            return ''
+        with open(file_path, 'r') as file:
+            data = json.load(file)
         
-        #randomly select which player goes first
+        if isinstance(data, dict):
+            self.__dict__.update(data)
+            print(f"Data loaded from {file_path}")
+        else:
+            raise ValueError("The json file does not contain a valid dictionary.")
+
+
+    def play_game(self, name1: str, name2: str) -> str:
+        """
+        Plays a game between 2 players, updates their elos,
+        and returns the winner's name
+
+        The selection of white/black is determined randomly
+
+        Args:
+            name1: the first player's name
+            name2: the second player's name
+        """
+
+        # Check players are valid
+        if name1 not in self.players.keys():
+            raise ValueError(f"Invalid player name {name1}")
+        elif name2 not in self.players.keys():
+            raise ValueError(f"Invalid player name {name2}")
+        
+        # Initialize main GameNode
+        game = GameNode(9)
+
+        # Randomly select which player goes first
         if randint(1,2) % 2 == 1:
-            name1, name2 = name2, name1 
+            name1, name2 = name2, name1
 
         player1_elo = self.players[name1][0]
         player2_elo = self.players[name2][0]
 
-        player1 = self.players[name1][1]
-        player2 = self.players[name2][1]
+        bot1 = self.players[name1][1]
+        bot2 = self.players[name2][1]
 
-        #Use the game node class to simulate the running of these 2 agents till the end of the game
-        while(not self.game.is_terminal()):
-            move = (0,0)
-            if self.game.move == 1:
-                move = player1.choose_move(game = self.game)
+        bot1.reset()
+        bot2.reset()
+
+        # Run a game until end
+        while not game.is_terminal():
+            move = None
+
+            if game.move % 2 == 0:
+                move = bot1.choose_move()
             else:
-                move = player2.choose_move(game = self.game)
+                move = bot2.choose_move()
 
-            self.game = self.game.create_child(move)
+            bot1.register_move(move)
+            bot2.register_move(move)
 
-        result = self.game.compute_winner()
+            game = game.create_child(move)
 
-        p1_new_elo, p2_new_elo = self._calc_elo(result=result, p1_elo=player1_elo, p2_elo=player2_elo)
+        # Calculate ratings
+        result = game.compute_winner()
 
+        p1_new_elo, p2_new_elo = self.calc_elo(
+            result = result,
+            p1_elo = player1_elo,
+            p2_elo = player2_elo
+        )
 
-        #Elo isn't defined under 0, so we do this
-        if p1_new_elo > 0:
-            self.players[name1][0] = p1_new_elo
-        else:
-            self.players[name1][0] = 50
-
-
-        if p2_new_elo > 0:
-            self.players[name2][0] = p2_new_elo
-        else:
-            self.players[name2][0] = 50
-
-
-        #reset the game to its starting state,
-        #the idea behind this is that the other 2 bots hold a reference to the self.game instance managed by the elo calculator
-        self.game = TreeNode(GameNode(9))
-        # player1.reset_tree(self.game)
-        # player2.reset_tree(self.game)
-
+        # Enforce min elo
+        self.players[name1][0] = max(self.min_elo, p1_new_elo)
+        self.players[name2][0] = max(self.min_elo, p2_new_elo)
+        
         return name1 if result == 1 else name2
-            
-    def _calc_elo(self, result: int, p1_elo: float, p2_elo: float) -> tuple[float, float]:
+
+
+    def calc_elo(self, result: int, p1_elo: float, p2_elo: float) -> Tuple[float, float]:
         """
-        This function will take in the result and elo of two players and calculate their updated scores
-        (Assuming that result = 1 means p1 won and result = -1 means p2 won)
+        Calculates the new elos of a game between 2 players
+        and returns a tuple of the new ratings
+
+        Args:
+            result: 1 if player 1 won, -1 if player 2 won
+            p1_elo: Black's elo rating
+            p2_elo: White's elo rating
         """
 
         p1_expected = 1/(1 + 10**((p2_elo - p1_elo)/400.0))
         p2_expected = 1/(1 + 10**((p1_elo - p2_elo)/400.0))
 
-        print(f"p1 expected {p1_expected}")
-        print(f"p2 expected {p2_expected}")
+        result = (result + 1)/2 # Map {-1, 1} -> {0, 1}
 
-        if(result == 1):
-            p1_elo = p1_elo + self.max_gain*(result - p1_expected)
-            p2_elo = p1_elo + self.max_gain*(-1*result - p2_expected)
-        else:
-            p1_elo = p1_elo + self.max_gain*(-1*result - p1_expected)
-            p2_elo = p1_elo + self.max_gain*(result - p2_expected)
-
-        print(p1_elo, p2_elo)
+        p1_elo += self.max_gain * (result - p1_expected)
+        p2_elo += self.max_gain * (1 - result - p2_expected)
 
         return p1_elo, p2_elo
-    
 
 
 if __name__ == "__main__":
+    # Init calculator
+    elo = Elo_calculator(100, 100)
+
+    # Init string
+    print("="*36)
+    print(" "*11 + "Elo Calculator" + " "*11)
+    print("-"*36)
+    print(f"""min_elo: {elo.min_elo}
+max_gain: {elo.max_gain}
+default_elo: {elo.default_elo}""")
+    print("="*36)
+
+    # Load models
+    sl_model = load_model("SL_weights.pt")
+    rl_model = load_model("RL_weights.pt")
     
-    # go = Board(9)
-    go = TreeNode(GameNode(9))
-
-    elo = Elo_calculator(game=go, prev_elo_data= "elo_data.json")
-    print(elo.__dict__)
-
+    # Init bots
     random_player = RandomBot()
 
-    sl_model = load_model("./model_weights/SL_weights.pt")
     sl_notree = SupervisedLearningBot(model = sl_model)
-    sl_tree = MonteCarloBot(model = sl_model)
+    sl_tree = MonteCarloBot(model = sl_model, device = "cpu", always_allow_pass = True)
 
-    rl_model = load_model("./model_weights/Great_Lakes_Weights.pt")
-    rl_notree = SupervisedLearningBot(model=rl_model)
-    rl_tree = MonteCarloBot(model = rl_model)
+    rl_notree = SupervisedLearningBot(model = rl_model)
+    rl_tree = MonteCarloBot(model = rl_model, device = "cpu", always_allow_pass = True)
 
-    elo.register_bot(name = "Random_Player", bot= random_player)
-    elo.register_bot(name = "Supervised_Learning_No_Tree", bot= sl_notree)
-    elo.register_bot(name = "Supervised_Learning_Tree", bot= sl_tree)
-    elo.register_bot(name = "Reinforcement_Learning_No_Tree", bot= rl_notree)
-    elo.register_bot(name = "Reinforcement_Learning_Tree", bot= rl_tree)
+    # Register bots
+    elo.register_bot(name = "Random", bot = random_player)
+    elo.register_bot(name = "RL_No_Tree", bot = rl_notree)
+    elo.register_bot(name = "RL_Tree", bot = rl_tree)
+    elo.register_bot(name = "SL_No_Tree", bot = sl_notree)
+    elo.register_bot(name = "SL_Tree", bot = sl_tree)
 
-    players = ["Random_Player", "Supervised_Learning_No_Tree", "Supervised_Learning_Tree", "Reinforcement_Learning_No_Tree", "Reinforcement_Learning_Tree"]
+    # Play tournament
+    players = elo.players.keys()
 
-    for i in range(1, 1_000):
-        if i % 10 == 0:
-            print("="*25 + "saving" + "="*25)
-            elo.save("elo_datal.json")
-        player_list = random.choices(players[1:], k = 2)
-        print(elo.play_match(player_list[0],player_list[1]))
+    for _ in range(5):
+        for player1, player2 in combinations(players, 2):
+            print(f"Playing: {player1} vs {player2}")
+            print(f"  Winner: {elo.play_game(player1, player2)}")
 
-   
+        print("-"*14 + " saving " + "-"*14)
+        elo.save("elo_data_log.json")
+        print("-"*32)
+    
     elo.save("elo_data.json")
+
