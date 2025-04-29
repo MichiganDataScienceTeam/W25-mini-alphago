@@ -1,6 +1,9 @@
 import numpy as np
 import random
 
+from typing import Tuple
+
+from board import Board
 from network import NeuralNet
 from monte_carlo import MonteCarlo
 from tree_node import TreeNode
@@ -13,114 +16,164 @@ from config import *
 class Bot:
     def __init__(self):
         """
-        Add whatever member variables you want
+        Initializes the bot
         """
-        raise(NotImplementedError)
+
+        self.curr = TreeNode(GameNode(9))
         
 
-    def choose_move(self) -> tuple[int, int]:
+    def choose_move(self) -> Tuple[int, int]:
         """
-        This function takes in the board at the current state, and outputs the move it wants to take as a tuple of ints
+        Chooses a move and returns the location tuple of the move
+        """
 
-        It does not make the move itself.
-        """
         raise(NotImplementedError)
+    
+    
+    def reset(self) -> None:
+        """
+        Resets internal bot data
+        """
+
+        self.curr = TreeNode(GameNode(9))
+
+
+    def register_move(self, loc: Tuple[int, int]) -> None:
+        """
+        Updates internal bot data with the latest move
+
+        Args:
+            loc: the location of the move to play
+        """
+
+        self.curr = self.curr.create_child(loc)
+    
+
+    def get_tree(self) -> TreeNode:
+        return self.curr
+    
+    def __int__(self) -> int:
+        return int(self.curr)
 
 
 class RandomBot(Bot):
-    def __init__(self):
-        pass        
-
-    def choose_move(self, game) -> tuple[int, int]:
+    def choose_move(self) -> Tuple[int, int]:
         """
         Randomly select a move
         """
-        next_moves = game.available_moves()
-        return random.choice(next_moves)
 
-    def reset_tree(self, new_game):
-        print(f"old tree {self.game}")
-        self.game = new_game
-        print(f"new tree {self.game}")
+        next_moves = self.curr.available_moves()
+        return random.choice(next_moves)
 
 
 class SupervisedLearningBot(Bot):
     def __init__(self, model):
+        super().__init__()
+
         self.model = model
 
-    def choose_move(self, game) -> tuple[int, int]:
+
+    def choose_move(self) -> Tuple[int, int]:
         """
         Sample the move from the available allowed actions using the model's prior
         """
         
-        input_tensor = node_to_tensor(game).unsqueeze(0)
+        input_tensor = node_to_tensor(self.curr).unsqueeze(0)
 
         prior, value = self.model.forward(input_tensor)
-        next_moves = game.available_moves()
+        next_moves = self.curr.available_moves()
 
         #Don't need tensor in a batch or for computation, just want to sample a single thing from it
-        prior = prior[0].detach().cpu().numpy() 
-    
+        prior = prior[0].detach().cpu().numpy()
+
         action_index = np.random.choice(len(prior), p=prior)
 
-    
         return next_moves[action_index % len(next_moves)]
-
-    def reset_tree(self, new_game):
-        print(f"old tree {self.game}")
-        self.game = new_game
-        print(f"new tree {self.game}")
 
 
 class MonteCarloBot(Bot):
-    def __init__(self, model: NeuralNet = NeuralNet(), device: str = DEVICE):
+    def __init__(self, model: NeuralNet = None, device: str = DEVICE, always_allow_pass: bool = False):
         """
-        Add whatever member variables you want
+        Initializes the bot
+
+        Args:
+            model: the NeuralNet model for MCTS
+            device: the device to run NN computations on
+            always_allow_pass: whether to always allow pass
         """
+
+        if model is None:
+            model = NeuralNet()
+
         self.model = model
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), device)
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), device, always_allow_pass)
+
+        self.mcts.search()
     
 
-    def reset_tree(self) -> None:
+    def reset(self) -> None:
+        """
+        Resets internal bot data
+        """
+
         self.mcts.reset()
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device)
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device, always_allow_pass=True)
 
 
-    def choose_move(self, num_searches: int = 10, game = None) -> TreeNode:
+    def choose_move_tree(self, num_searches: int = 10) -> TreeNode:
         """
-        This function takes in the board at the current state, and outputs the move it wants to take as a tuple of ints
+        Chooses a move and returns the resulting TreeNode
 
-        It does not make the move itself.
+        Args:
+            num_searches: number of searches before choosing a move
         """
-        
-        if game == None:
-            for _ in range(num_searches):
-                self.mcts.search()
-                
-            probs = self.mcts.curr.get_policy()
-            
-            if len(probs) == 0:
-                return (-1, -1)
 
-            action_index = np.random.choice(len(probs), p=probs)
-            return self.mcts.curr.nexts[action_index]
-        
-        #This is not good code design, but basically if a game is being passed in, we're using the elo calculator, and want to reutrn a move instead
-        else:
-            self.mcts = MonteCarlo(self.model, game)
-            for _ in range(num_searches):
-                self.mcts.search()
-                
-            prior = self.mcts.curr.get_policy()
-            next_moves = game.available_moves()
+        for _ in range(num_searches):
+            self.mcts.search()
 
-            #Don't need tensor in a batch or for computation, just want to sample a single thing from it
-            prior = prior.detach().cpu().numpy() 
-        
-            action_index = np.random.choice(len(prior), p=prior)
+        probs = self.mcts.curr.get_policy()
 
-        
-            return next_moves[action_index % len(next_moves)]
+        if len(probs) == 0:
+            return None
 
-    def make_move(self, move: tuple[int, int]) -> None:
-        self.mcts.move_curr(move)
+        action_index = np.random.choice(len(probs), p=probs)
+
+        assert((-1, -1) in [x.prev_move for x in self.mcts.curr.nexts])
+
+        return self.mcts.curr.nexts[action_index]
+
+
+    def choose_move(self, num_searches: int = 10) -> Tuple[int, int]:
+        """
+        Chooses a move and returns the location tuple of the move
+
+        Args:
+            num_searches: number of searches before choosing a move
+        """
+
+        node = self.choose_move_tree(num_searches)
+
+        if node is None:
+            return (-1, -1)
+        
+        return node.prev_move
+
+
+    def register_move(self, loc: Tuple[int, int]) -> None:
+        """
+        Updates internal bot data with the latest move
+
+        Args:
+            loc: the location of the move to play
+        """
+
+        self.mcts.search()
+        self.mcts.move_curr(loc)
+
+
+    def get_tree(self) -> TreeNode:
+        return self.mcts.curr
+
+    def __int__(self) -> int:
+        return int(self.mcts.curr)
+

@@ -20,12 +20,12 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     # Log the moves and policies
     moves = []
 
-    bot.reset_tree()
+    bot.reset()
 
     # Play the game
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
-        new_curr = bot.choose_move(SEARCHES_PER_MOVE)
+        new_curr = bot.choose_move_tree(SEARCHES_PER_MOVE)
         bot.mcts.curr = new_curr
         move = new_curr.prev_move
 

@@ -35,7 +35,10 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
     """
 
     torch.set_num_threads(1)
-    os.sched_setaffinity(0, {n})
+    try:
+        os.sched_setaffinity(0, {n})
+    except:
+        pass
 
     # Use cpu for self-play, moving lots of small data is bad
     # Also, the multiprocessing becomes very demanding if shared gpu
@@ -44,7 +47,7 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
     temp_ds = Dataset()
 
     for _ in range(games):
-        bot.reset_tree()
+        bot.reset()
         tree, winner = self_play(bot)
 
         temp_ds.add_rl_game(tree, winner)
@@ -68,7 +71,10 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     """
 
     torch.set_num_threads(1)
-    os.sched_setaffinity(0, {0})
+    try:
+        os.sched_setaffinity(0, {0})
+    except:
+        pass
 
     if verbose:
         start_time = perf_counter()
