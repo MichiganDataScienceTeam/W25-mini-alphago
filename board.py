@@ -339,7 +339,7 @@ class Board:
                 self.move += 1
             
             return True
-        else:
+        elif move:
             self.num_passes = 0
 
         # Prohibit placing stone on top of another
