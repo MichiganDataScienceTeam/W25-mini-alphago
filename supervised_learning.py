@@ -61,4 +61,4 @@ if __name__ == "__main__":
     model = NeuralNet().to(DEVICE)
     train(model, epochs=5)
 
-    save_model(model, "SL_wieghts.pt")
+    save_model(model, "SL_weights.pt")
