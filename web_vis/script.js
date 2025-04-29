@@ -18,7 +18,9 @@ const nav_pass = document.getElementById("pass")
 const settings_policy = document.getElementById("show-policy")
 const settings_value = document.getElementById("show-value")
 
-// Functions
+const tree = document.getElementById("tree")
+
+// Read data
 async function updateBoard() {
     const response1 = await fetch("/get_board", {"method": "POST"})
     const newBoardStr = await response1.text()
@@ -41,6 +43,81 @@ async function updateBoard() {
     updateEval(value)
 }
 
+async function updateTree() {
+    const response = await fetch("/get_tree", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json"
+        }
+    })
+
+    let data_arr = await response.json()
+
+    const makeNode = (val, tooltip) => {
+        const node = document.createElement("div")
+        const p = document.createElement("pre")
+        const children = document.createElement("div")
+
+        node.classList.add("node")
+        children.classList.add("children")
+        p.textContent = val
+        p.setAttribute("style", "--tooltip: \"" + tooltip.replaceAll("\n", "\\00000A") + "\";")
+        node.appendChild(p)
+        node.appendChild(children)
+
+        return {"node": node, "p": p, "children": children}
+    }
+
+    const first_data = data_arr.shift()
+    let elt_arr = [makeNode(first_data["val"], first_data["tooltip"])]
+
+    for (const x of data_arr) {
+        const new_node = makeNode(x["val"], x["tooltip"])
+        const parent = elt_arr[x["prev"]]
+        parent["children"].appendChild(new_node["node"])
+        elt_arr.push(new_node)
+    }
+
+    tree.innerHTML = ""
+    tree.appendChild(elt_arr[0]["node"])
+}
+
+// Board updates (backend required)
+async function playMove(i, j) {
+    await fetch("/play_move", {
+        "method": "POST",
+        "headers": {
+            "Content-Type": "application/json",
+        },
+        "body": JSON.stringify({
+            "row": i,
+            "col": j
+        })
+    })
+
+    updateBoard()
+    updateTree()
+}
+
+async function reset() {
+    await fetch("/reset", {"method": "POST"})
+
+    updateBoard()
+    updateTree()
+}
+
+async function undo() {
+    await fetch("/undo", {"method": "POST"})
+
+    updateBoard()
+    updateTree()
+}
+
+async function pass() {
+    playMove(-1, -1)
+}
+
+// Visual only updates
 function updateEval(value) {
     eval_bar.setAttribute("style", "--eval: " + value)
     eval_num.innerText = Math.round(value * 100) / 100
@@ -60,37 +137,6 @@ function updatePolicy(policy) {
             board[i][j].setAttribute("style", "--policy: " + policy[i * SIZE + j])
         }
     }
-}
-
-async function playMove(i, j) {
-    await fetch("/play_move", {
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json",
-        },
-        "body": JSON.stringify({
-            "row": i,
-            "col": j
-        })
-    })
-
-    updateBoard()
-}
-
-async function reset() {
-    await fetch("/reset", {"method": "POST"})
-
-    updateBoard()
-}
-
-async function undo() {
-    await fetch("/undo", {"method": "POST"})
-
-    updateBoard()
-}
-
-async function pass() {
-    playMove(-1, -1)
 }
 
 function togglePolicy() {
@@ -140,3 +186,4 @@ for (let i = 0; i < SIZE; i++) {
 }
 
 updateBoard()
+updateTree()

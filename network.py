@@ -1,8 +1,10 @@
-import torch.nn as nn
 import torch
+import torch.nn as nn
+
 from game_node import GameNode
 from data_preprocess import node_to_tensor
 from config import *
+
 
 class ConvBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel: int):
@@ -81,6 +83,9 @@ class PolicyHead(nn.Module):
         # 4. A fully connected linear layer, 
         # corresponding to logit probabilities for all intersections and the pass move
         self.fc = nn.Linear(2 * board_size * board_size, board_size * board_size + 1)
+
+        # 5. Convert logits to probabilities
+        self.softmax = nn.Softmax(dim=-1)
         
     def forward(self, x):
         x = self.conv(x)
@@ -88,8 +93,9 @@ class PolicyHead(nn.Module):
         x = self.relu(x)
         # flatten to (batch_size, 2*board_size*board_size)
         x = x.view(x.size(0), -1)
+        x = self.fc(x)
         
-        return self.fc(x)
+        return self.softmax(x)
 
 
 class ValueHead(nn.Module):
@@ -135,7 +141,6 @@ class ValueHead(nn.Module):
         return torch.tanh(x)
 
 
-
 class NeuralNet(nn.Module):
     def __init__(self, in_channels: int = INPUT_CHANNELS, out_channels: int = OUTPUT_CHANNELS, kernel: int = KERNEL, num_residuals: int = NUM_RESIDUALS):
         super().__init__()
@@ -157,7 +162,64 @@ class NeuralNet(nn.Module):
         policy = self.policy_head(x)
         value = self.value_head(x)
 
+        
         return policy, value
+
+
+class GoLoss(torch.nn.Module):
+    def __init__(self, mse_weight: float = 1):
+        self.mse_weight = mse_weight
+        super().__init__()
+
+    def forward(self, z: torch.Tensor, z_hat: torch.Tensor, pi: torch.Tensor, pi_hat: torch.Tensor):
+        value_loss = torch.nn.functional.mse_loss(z_hat, z) * self.mse_weight
+        policy_loss = torch.nn.functional.cross_entropy(pi_hat, pi)
+
+        return value_loss + policy_loss
+
+def save_model(model: nn.Module, filepath: str, prefix: str = "Model saved to") -> None:
+    """
+    Save a PyTorch model's state_dict and config
+
+    Args:
+        model: the NeuralNet instance
+        filepath: the file to save to
+        prefix: prefix of the print message
+    """
+
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'config': {
+            'in_channels': model.conv.conv.in_channels,
+            'out_channels': model.conv.conv.out_channels,
+            'kernel': model.conv.conv.kernel_size[0],
+            'num_residuals': len(model.residuals)
+        }
+    }, filepath)
+
+    print(f"{prefix} {filepath}")
+
+
+def load_model(filepath: str, prefix: str = "Model loaded from") -> NeuralNet:
+    """
+    Load a NeuralNet model from a file
+
+    Args:
+        filepath: the file to load from
+
+    Returns:
+        NeuralNet: the loaded model
+        prefix: prefix of the print message
+    """
+
+    checkpoint = torch.load(filepath, weights_only=False, map_location=torch.device('cpu'))
+    config = checkpoint['config']
+
+    model = NeuralNet(**config)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    print(f"{prefix} {filepath}")
+    
+    return model
 
 if __name__ == "__main__":
     # Defining board and running game

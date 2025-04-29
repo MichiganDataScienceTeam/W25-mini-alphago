@@ -66,18 +66,26 @@ button:hover::after {
 /* LAYOUT */
 body {
     padding: 1em;
+    height: calc(100vh - 2rem);
+    display: grid;
+    grid-template-rows: min-content auto;
+    grid-template-columns: min-content auto;
+    grid-template-areas: 
+        "title title"
+        "game tree";
+    gap: 2rem;
 }
 
 main {
     display: grid;
-    grid-template-columns: max-content auto;
+    grid-template-rows: max-content auto;
     gap: 4em;
 }
 
 /* TITLE */
 #title {
     font-size: 3rem;
-    padding-bottom: 2rem;
+    grid-area: title;
 }
 
 /* MAIN */
@@ -87,7 +95,7 @@ main {
     grid-template-areas:
         "eval board"
         "eval nav";
-    column-gap: 1em;
+    gap: 1em;
 }
 
 /* EVAL BAR */
@@ -175,6 +183,7 @@ main {
     border-radius: 0;
     border: 0.1em solid black;
     padding: 0.5rem;
+    background-color: rgb(239, 239, 239);
 }
 
 /* SETTINGS */
@@ -188,3 +197,129 @@ main {
     font-size: 2rem;
 }
 
+
+/* TREE */
+#tree {
+    overflow: scroll;
+}
+
+#tree > .node {
+    padding-right: 10rem;
+}
+
+.node {
+    position: relative;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: center;
+    gap: 2rem;
+}
+
+.node pre {
+    --tooltip: "p: 1\Aq: 2";
+    position: relative;
+    font-size: 1rem;
+    line-height: 1.2rem;
+    transition: background-color 0.3s ease;
+}
+
+.node pre:hover {
+    background-color: rgba(137, 106, 228, 0.2);
+    cursor: pointer;
+}
+
+.node pre::before {
+    content: var(--tooltip);
+    font-size: 1.2rem;
+    position: absolute;
+    z-index: 3;
+    left: calc(100% + 0.5rem);
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: white;
+    white-space: pre;
+    padding: 0.5rem;
+    border: 0.1em solid black;
+    visibility: hidden;
+    box-shadow: 0 0 0.5rem 0.1rem rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+.node pre:hover::before {
+    visibility: visible;
+}
+
+.node .children {
+    position: relative;
+}
+
+.node > .children > .node::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: -1rem;
+    width: 1rem;
+    height: 0.3rem;
+    transform: translateY(-50%);
+    background-color: black;
+}
+
+.node > .children::after {
+    content: "";
+    position: absolute;
+    top: calc(6rem - 0.15rem);
+    left: -1.15rem;
+    width: 0.3rem;
+    height: calc(100% - 12rem + 0.3rem);
+    background-color: black;
+}
+
+.node:has(.children > .node) > pre {
+    position: relative;
+}
+
+.node:has(.children > .node) > pre::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: -1rem;
+    width: 1rem;
+    height: 0.3rem;
+    transform: translateY(-50%);
+    background-color: black;
+}
+
+.children > .node:first-child::before {
+    content: "";
+    z-index: 1;
+    position: absolute;
+    left: -1.15rem;
+    bottom: calc(50% + 0.15rem);
+    width: 0.3rem;
+    height: calc(50% - 1rem);
+    background-color: white;
+}
+
+.children > .node:last-child::before {
+    content: "";
+    z-index: 1;
+    position: absolute;
+    left: -1.15rem;
+    top: calc(50% + 0.15rem);
+    width: 0.3rem;
+    height: calc(50% - 1rem);
+    background-color: white;
+}
+
+.children > .node:only-child::before {
+    content: "";
+    z-index: 1;
+    position: absolute;
+    left: -1.15rem;
+    top: 0;
+    width: 0.3rem;
+    height: calc(100% - 2rem);
+    background-color: white;
+}

@@ -1,3 +1,4 @@
-numpy==2.2.2
-torch==2.4.0
-Flask==3.1.0
+numpy==2.2.2  # Calculations
+torch==2.4.0  # ML
+Flask==3.1.0  # Web visualization
+tqdm==4.67.1  # Progress bars

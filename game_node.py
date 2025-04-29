@@ -1,4 +1,3 @@
-import numpy as np
 from typing import Self
 
 from board import Board
@@ -19,7 +18,7 @@ class GameNode(Board):
 
     def __init__(self, size: int, komi: float = 7.5, move: int = 0,
                  prev: Self = None, prev_move: tuple[int, int] = None,
-                 nexts: list[Self] = []):
+                 nexts: list[Self] = None):
 
         if komi - int(komi) == 0:
             raise ValueError(f"Invalid komi {komi}: komi must contain" +
@@ -33,7 +32,10 @@ class GameNode(Board):
 
         self.prev = prev
         self.prev_move = prev_move
-        self.nexts = nexts
+        if nexts is not None:
+            self.nexts = nexts
+        else:
+            self.nexts = []
 
 
     def copy(self) -> Self:
@@ -45,7 +47,7 @@ class GameNode(Board):
             move = self.move,
             prev = self.prev,
             prev_move = self.prev_move,
-            nexts = self.nexts.copy()
+            nexts = []
         )
 
         # Board deep copy
@@ -62,14 +64,19 @@ class GameNode(Board):
         return res
 
 
-    def play_stone(self, row: int, col: int, move: bool) -> None:
-        """
-        GameNode shouldn't support play_stone because it violates
-        tree invariants. create_child handles the tree components
-        while maintaining the same general function
-        """
+    def is_terminal(self) -> bool:
+        # First, check if the game is terminal by other means.
+        if super().is_terminal():
+            return True
+        
+        # Check for double pass: if this node's move is a pass
+        # and the parent's move is also a pass.
+        if self.prev is not None:
+            # Make sure the parent's prev_move is defined before checking
+            if self.prev.prev_move == (-1, -1) and self.prev_move == (-1, -1):
+                return True
 
-        raise Exception("GameNode doesn't support play_stone. Use create_child instead.")
+        return False
 
 
     def create_child(self, loc: tuple[int, int]) -> Self:
@@ -84,12 +91,9 @@ class GameNode(Board):
 
         child = self.copy()
 
-        if not super(type(child), child).play_stone(loc[0], loc[1], True):
+        if not child.play_stone(loc[0], loc[1], True):
             raise ValueError(f"Invalid move location \"{loc}\"")
 
-        self.nexts.append(child)
-
-        child.nexts = []
         child.prev = self
         child.prev_move = loc
 
@@ -105,7 +109,10 @@ if __name__ == "__main__":
             row = int(input("Row: "))
             col = int(input("Column: "))
 
-            board = board.create_child((row, col))
+            next_board = board.create_child((row, col))
+            board.nexts.append(next_board)
+            board = next_board
+
             print(board.get_game_data())
             print(board.get_game_data().shape)
 
