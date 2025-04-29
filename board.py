@@ -300,7 +300,7 @@ class Board:
         # Case 1: Capture opponent stone
         for group in self.groups:
             if (group.group_type != val) and (group.liberties.sum() == 1) and group.liberties[loc]:
-                return self.__play_stone(row, col, False)
+                return self.play_stone(row, col, False)
         
         # Case 2: No immediate liberties
         n_liberties = 0
@@ -312,30 +312,13 @@ class Board:
             n_liberties += self.grid[row + i, col + j] == 0
 
         if n_liberties == 0:
-            return self.__play_stone(row, col, False)
+            return self.play_stone(row, col, False)
 
         return True
 
 
     def play_stone(self, row: int, col: int, move: bool = True) -> bool:
         """
-        Attempts to place a stone of value val at (row, col)
-        
-        Returns True if the move is valid, False if not
-
-        Args:
-            row: index of the row to place the stone
-            col: index of the column to place the stone
-            move (optional): whether or not to update the board, default True
-        """
-
-        return self.__play_stone(row, col, move)
-
-
-    def __play_stone(self, row: int, col: int, move: bool = True) -> bool:
-        """
-        THIS IS A PRIVATE METHOD! DO NOT USE THIS OUTSIDE BOARD.PY
-
         Attempts to place a stone of value val at (row, col)
         
         Returns True if the move is valid, False if not
@@ -488,7 +471,7 @@ class Board:
                    k // SIZE,
                    k % SIZE
                )]
-        
+
         out.append((-1, -1)) # Players can always pass
 
         return out
