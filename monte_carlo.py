@@ -19,10 +19,13 @@ class MonteCarlo:
     Args:
         model: the NN to use (assumes is on cpu)
         root: root of the tree
+        device: the device to place the model on
+        always_allow_pass: whether to always allow pass
     """
 
 
-    def __init__(self, model: NeuralNet, root: TreeNode, device: str = DEVICE):
+    def __init__(self, model: NeuralNet, root: TreeNode, device: str = DEVICE, always_allow_pass: bool = False):
+        self.always_allow_pass = always_allow_pass
         self.device = device
         self.model = model.to(self.device)
         self.root = root
@@ -99,7 +102,8 @@ class MonteCarlo:
         if node.is_terminal():
             return
 
-        node.get_children(allow_pass=allow_pass)
+        node.get_children(allow_pass=(allow_pass or self.always_allow_pass))
+
         for child in node.nexts:
             move = child.prev_move
             i = move[0] * self.curr.size + move[1]
@@ -116,10 +120,12 @@ class MonteCarlo:
 
         selected = self.select(self.curr)
         val, policy = self.evaluate(selected)
-        if (self.curr.move > NUM_MOVES_ALLOW_PASS):
+
+        if self.curr.move > NUM_MOVES_ALLOW_PASS:
             self.expand(selected, policy, allow_pass=True)
         else: 
             self.expand(selected, policy, allow_pass=False)
+        
         selected.backprop(val)
     
 
