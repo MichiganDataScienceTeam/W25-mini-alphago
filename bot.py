@@ -47,13 +47,6 @@ class Bot:
         """
 
         self.curr = self.curr.create_child(loc)
-    
-
-    def get_tree(self) -> TreeNode:
-        return self.curr
-    
-    def __int__(self) -> int:
-        return int(self.curr)
 
 
 class RandomBot(Bot):
@@ -169,11 +162,4 @@ class MonteCarloBot(Bot):
 
         self.mcts.search()
         self.mcts.move_curr(loc)
-
-
-    def get_tree(self) -> TreeNode:
-        return self.mcts.curr
-
-    def __int__(self) -> int:
-        return int(self.mcts.curr)
 
