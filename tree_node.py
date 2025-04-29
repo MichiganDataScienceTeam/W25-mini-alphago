@@ -133,18 +133,3 @@ class TreeNode(GameNode):
 
         return torch.tensor(probs)
 
-
-    def is_terminal(self) -> bool:
-        # First, check if the game is terminal by other means.
-        if super().is_terminal():
-            return True
-        
-        # Check for double pass: if this node's move is a pass
-        # and the parent's move is also a pass.
-        if self.prev is not None:
-            # Make sure the parent's prev_move is defined before checking
-            if self.prev.prev_move == (-1, -1) and self.prev_move == (-1, -1):
-                return True
-
-        return False
-

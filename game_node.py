@@ -64,6 +64,21 @@ class GameNode(Board):
         return res
 
 
+    def is_terminal(self) -> bool:
+        # First, check if the game is terminal by other means.
+        if super().is_terminal():
+            return True
+        
+        # Check for double pass: if this node's move is a pass
+        # and the parent's move is also a pass.
+        if self.prev is not None:
+            # Make sure the parent's prev_move is defined before checking
+            if self.prev.prev_move == (-1, -1) and self.prev_move == (-1, -1):
+                return True
+
+        return False
+
+
     def create_child(self, loc: tuple[int, int]) -> Self:
         """
         Returns the child GameNode after placing a stone at the
@@ -76,7 +91,7 @@ class GameNode(Board):
 
         child = self.copy()
 
-        if not super(type(child), child).play_stone(loc[0], loc[1], True):
+        if not child.play_stone(loc[0], loc[1], True):
             raise ValueError(f"Invalid move location \"{loc}\"")
 
         child.prev = self
