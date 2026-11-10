@@ -74,6 +74,8 @@ class Group:
         Returns a minimized list of disjoint groups after adding a
         new group containing exactly 1 stone
 
+        Groups not modified by the new stone are shared, not copied
+
         Args:
             groups: list of Groups
             new_stone_group: Group containing exactly 1 stone
@@ -87,12 +89,14 @@ class Group:
         
         new_stone = np.argmax(new_stone_group.intersections)
 
-        # Split groups
+        # Split groups (only copy groups that will be modified)
         for group in groups:
             if group.borders[new_stone] and group.group_type == new_stone_group.group_type:
-                need_union.append(group.copy())
-            else:
+                need_union.append(group)
+            elif group.liberties[new_stone]:
                 out.append(group.copy())
+            else:
+                out.append(group)
         
         # Union groups of same stone containing the new stone as a liberty
         new_intersections = np.logical_or.reduce([group.intersections for group in need_union])
@@ -114,7 +118,8 @@ class Group:
         
         # New stone cannot be liberty
         for group in out:
-            group.liberties[new_stone] = 0
+            if group.liberties[new_stone]:
+                group.liberties[new_stone] = 0
         
         return out
 

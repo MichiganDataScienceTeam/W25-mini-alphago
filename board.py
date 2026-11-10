@@ -49,7 +49,10 @@ class Board:
             turn: value of the stone to move (1 or 2)
         """
 
-        return turn + ((3**np.arange(1, grid.shape[0]**2+1, dtype=object)) * grid.flatten()).sum()
+        # Read the reversed grid as a base 3 string (much faster than summing powers of 3)
+        digits = (grid.flatten()[::-1] + ord("0")).astype(np.uint8).tobytes()
+
+        return turn + 3 * int(digits, 3)
 
 
     def __int__(self) -> int:
@@ -149,7 +152,8 @@ class Board:
 
         res.num_passes = self.num_passes
 
-        res.groups = [group.copy() for group in self.groups]
+        # Groups are never modified in place, so they can be shared
+        res.groups = self.groups.copy()
 
         res.index = Board.board_index
         Board.board_index += 1
@@ -387,8 +391,6 @@ class Board:
         candidate_groups = Group.add_union(self.groups, new_stone_group)
 
         # Compute captures
-        new_candidate_groups = []
-
         captured = np.zeros(self.size * self.size, dtype=bool)
 
         for group in candidate_groups:
@@ -396,17 +398,21 @@ class Board:
             if group.group_type == val:
                 continue
 
-            # Add if there are still liberties
-            if group.liberties.any():
-                new_candidate_groups.append(group)
-                continue
-            
             # Record captures
-            captured |= group.intersections
+            if not group.liberties.any():
+                captured |= group.intersections
 
         # Update for newly opened intersections
-        for group in candidate_groups:
-            group.replenish_liberties(captured)
+        if captured.any():
+            # Remove captured groups and copy the rest since groups may be shared
+            candidate_groups = [group.copy() for group in candidate_groups
+                                if not (group.intersections & captured).any()]
+
+            for group in candidate_groups:
+                group.replenish_liberties(captured)
+
+        # Add opposite color groups that were not captured
+        new_candidate_groups = [group for group in candidate_groups if group.group_type != val]
 
         # Prohibit suicide
         for group in candidate_groups:

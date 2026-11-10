@@ -56,7 +56,8 @@ class GameNode(Board):
 
         res.num_passes = self.num_passes
 
-        res.groups = [group.copy() for group in self.groups]
+        # Groups are never modified in place, so they can be shared
+        res.groups = self.groups.copy()
 
         res.index = Board.board_index
         Board.board_index += 1

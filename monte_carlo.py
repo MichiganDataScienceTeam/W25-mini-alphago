@@ -96,8 +96,11 @@ class MonteCarlo:
             node: the node to evaluate
         """
 
-        self.model.eval()
-        with torch.no_grad():
+        # Avoid recursively calling eval on every search
+        if self.model.training:
+            self.model.eval()
+
+        with torch.inference_mode():
             out = self.model.forward(node_to_tensor(node).unsqueeze(0).to(self.device))
         return out[1].item(), out[0].squeeze(0).detach().cpu().numpy() # trust me guys it works
     
