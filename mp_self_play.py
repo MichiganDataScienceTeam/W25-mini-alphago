@@ -1,7 +1,8 @@
 import os
 import platform
 import torch
-from time import perf_counter
+from time import perf_counter, sleep
+from tqdm import tqdm
 from torch import multiprocessing as mp
 
 from network import NeuralNet, load_model
@@ -31,7 +32,7 @@ def set_start_method_auto() -> None:
     mp.set_start_method('spawn', force=True)
 
 
-def worker(model: NeuralNet, games_left: mp.Value, n: int, cpus: set[int], evaluator: InferenceClient = None) -> None:
+def worker(model: NeuralNet, games_left: mp.Value, games_done: mp.Value, n: int, cpus: set[int], evaluator: InferenceClient = None) -> None:
     """
     Plays self-play games until no games are left and saves
     their positional data to a temp file
@@ -39,6 +40,7 @@ def worker(model: NeuralNet, games_left: mp.Value, n: int, cpus: set[int], evalu
     Args:
         model: the neural net (shared memory), unused if evaluator is given
         games_left: shared count of games left to play
+        games_done: shared count of finished games (for progress)
         n: the index of this worker
         cpus: the CPUs to run this worker on
         evaluator: client of the inference server (None to use model on cpu)
@@ -69,7 +71,8 @@ def worker(model: NeuralNet, games_left: mp.Value, n: int, cpus: set[int], evalu
 
         temp_ds.add_rl_game(tree, winner)
 
-        print(".", end="", flush=True)
+        with games_done.get_lock():
+            games_done.value += 1
 
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
@@ -115,10 +118,10 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     elif len(os.listdir(TEMP_FILE_PATH)) > 0:
         raise FileExistsError("Temp file path must start empty if it exists")
     
-    print("Multiprocessing Progress:")
-    print("X"*(n_processes * games_per_process))
+    n_games = n_processes * games_per_process
 
-    games_left = mp.Value("i", n_processes * games_per_process)
+    games_left = mp.Value("i", n_games)
+    games_done = mp.Value("i", 0)
 
     # Workers wait on the inference server, so use more workers than CPUs
     if INFERENCE_SERVER:
@@ -135,9 +138,9 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     processes = []
     for i in range(1, n_workers+1):
         if INFERENCE_SERVER:
-            args = (None, games_left, i, set(AVAILABLE_CPUS or []), InferenceClient(i, inputs, outputs, pipes[i][1]))
+            args = (None, games_left, games_done, i, set(AVAILABLE_CPUS or []), InferenceClient(i, inputs, outputs, pipes[i][1]))
         else:
-            args = (model, games_left, i, {get_cpu(i)})
+            args = (model, games_left, games_done, i, {get_cpu(i)})
 
         p = mp.Process(target=worker, args=args)
         p.start()
@@ -149,6 +152,12 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
             server_end.close()
             worker_end.close()
     
+    # Show progress (and time until training) while the workers play
+    with tqdm(total=n_games, desc="  Self-play", unit="game", mininterval=10) as bar:
+        while any(p.is_alive() for p in processes):
+            sleep(1)
+            bar.update(games_done.value - bar.n)
+
     for p in processes:
         p.join()
 
@@ -175,7 +184,7 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         os.remove(filepath)
     
     if verbose:
-        print(f"\n  Finished in {perf_counter() - start_time}s")
+        print(f"  Finished in {perf_counter() - start_time}s")
 
 
 def create_dataset(model_path: str, n_processes: int, games_per_process: int, verbose: bool = False) -> Dataset:
