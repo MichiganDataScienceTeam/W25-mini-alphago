@@ -19,12 +19,30 @@ class TreeNode(GameNode):
     """
 
 
+    # Board attributes that lazy children (see get_children) create on first access
+    BOARD_ATTRS = {"size", "move", "seen", "groups", "grid", "num_passes", "komi", "index"}
+
+
     def __init__(self, gn: GameNode, num_visits = 0, total_value = 0, prior = 0):
         self.__dict__.update(gn.__dict__)
 
         self.num_visits = num_visits
         self.total_value = total_value
         self.prior = prior
+
+
+    def __getattr__(self, name):
+        """
+        Creates the board of a lazy child the first time one of its
+        board attributes is accessed (only called if normal lookup fails)
+        """
+
+        if name not in TreeNode.BOARD_ATTRS or "prev" not in self.__dict__:
+            raise AttributeError(name)
+
+        self.create_board()
+
+        return self.__dict__[name]
 
 
     def __str__(self):
@@ -77,6 +95,42 @@ class TreeNode(GameNode):
         return child
 
 
+    @staticmethod
+    def lazy_child(parent: TreeNode, loc) -> TreeNode:
+        """
+        Returns a child TreeNode for the move at loc without creating its
+        board, which is only created once needed (most children are never visited)
+
+        Args:
+            parent: the TreeNode to create the child of
+            loc: index tuple for the location of the move
+                 or (-1, -1) to pass
+        """
+
+        child = TreeNode.__new__(TreeNode)
+
+        child.prev = parent
+        child.prev_move = loc
+        child.nexts = []
+
+        child.num_visits = 0
+        child.total_value = 0
+        child.prior = 0
+
+        return child
+
+
+    def create_board(self) -> None:
+        """ Creates the board of a lazy child by playing its move on a copy of the parent """
+
+        board = GameNode.copy(self.prev)
+        board.play_stone(self.prev_move[0], self.prev_move[1], move = True)
+
+        # Keep tree data (prev, prev_move, nexts)
+        for key, value in board.__dict__.items():
+            self.__dict__.setdefault(key, value)
+
+
     def is_leaf(self) -> bool:
         """ Returns if this is a leaf OR is terminal """
 
@@ -85,18 +139,18 @@ class TreeNode(GameNode):
 
     def get_children(self, allow_pass: bool) -> List[Self]:
         """
-        Returns a list of new TreeNodes for each valid move
+        Returns a list of new lazy TreeNodes for each valid move
         from the current position
-    
+
         Args:
             allow_pass: whether to consider pass as a valid move
         """
 
-        self.nexts = [self.create_child(move) for move in self.available_moves()]
+        self.nexts = [TreeNode.lazy_child(self, move) for move in self.available_moves()]
 
         if not allow_pass:
             self.nexts.pop()
-        
+
         return self.nexts
 
     
