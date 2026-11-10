@@ -21,13 +21,16 @@ class MonteCarlo:
         root: root of the tree
         device: the device to place the model on
         always_allow_pass: whether to always allow pass
+        evaluator: optional function used instead of the model to evaluate
+                   positions (e.g. an InferenceClient), model may be None
     """
 
 
-    def __init__(self, model: NeuralNet, root: TreeNode, device: str = DEVICE, always_allow_pass: bool = False):
+    def __init__(self, model: NeuralNet, root: TreeNode, device: str = DEVICE, always_allow_pass: bool = False, evaluator = None):
         self.always_allow_pass = always_allow_pass
         self.device = device
-        self.model = model.to(self.device)
+        self.evaluator = evaluator
+        self.model = model.to(self.device) if evaluator is None else model
         self.root = root
         self.curr = root
     
@@ -95,6 +98,9 @@ class MonteCarlo:
         Args:
             node: the node to evaluate
         """
+
+        if self.evaluator is not None:
+            return self.evaluator(node_to_tensor(node).numpy())
 
         # Avoid recursively calling eval on every search
         if self.model.training:

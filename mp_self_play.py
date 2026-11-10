@@ -8,6 +8,7 @@ from network import NeuralNet, load_model
 from bot import MonteCarloBot
 from reinforcement_learning import self_play
 from dataset import Dataset
+from inference_server import InferenceClient, make_buffers, serve
 
 from config import *
 
@@ -30,27 +31,28 @@ def set_start_method_auto() -> None:
     mp.set_start_method('spawn', force=True)
 
 
-def worker(model: NeuralNet, games_left: mp.Value, n: int, cpu: int) -> None:
+def worker(model: NeuralNet, games_left: mp.Value, n: int, cpus: set[int], evaluator: InferenceClient = None) -> None:
     """
     Plays self-play games until no games are left and saves
     their positional data to a temp file
 
     Args:
-        model: the neural net (shared memory)
+        model: the neural net (shared memory), unused if evaluator is given
         games_left: shared count of games left to play
         n: the index of this worker
-        cpu: the CPU to run this worker on
+        cpus: the CPUs to run this worker on
+        evaluator: client of the inference server (None to use model on cpu)
     """
 
     torch.set_num_threads(1)
     try:
-        os.sched_setaffinity(0, {cpu})
+        os.sched_setaffinity(0, cpus)
     except:
         pass
 
     # Use cpu for self-play, moving lots of small data is bad
-    # Also, the multiprocessing becomes very demanding if shared gpu
-    bot = MonteCarloBot(model, "cpu")
+    # Batch evaluations on the inference server instead if available
+    bot = MonteCarloBot(model, "cpu", evaluator=evaluator)
 
     temp_ds = Dataset()
 
@@ -67,7 +69,7 @@ def worker(model: NeuralNet, games_left: mp.Value, n: int, cpu: int) -> None:
 
         temp_ds.add_rl_game(tree, winner)
 
-        print(n, end="", flush=True)
+        print(".", end="", flush=True)
 
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
@@ -118,17 +120,47 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
 
     games_left = mp.Value("i", n_processes * games_per_process)
 
+    # Workers wait on the inference server, so use more workers than CPUs
+    if INFERENCE_SERVER:
+        n_workers = n_processes * WORKERS_PER_PROCESS
+
+        inputs, outputs = make_buffers(n_workers + 1)
+        pipes = [mp.Pipe() for _ in range(n_workers + 1)]
+
+        server = mp.Process(target=serve, args=(model, inputs, outputs, [None] + [pipe[0] for pipe in pipes[1:]]))
+        server.start()
+    else:
+        n_workers = n_processes
+
     processes = []
-    for i in range(1, n_processes+1):
-        p = mp.Process(target=worker, args=(model, games_left, i, get_cpu(i)))
+    for i in range(1, n_workers+1):
+        if INFERENCE_SERVER:
+            args = (None, games_left, i, set(AVAILABLE_CPUS or []), InferenceClient(i, inputs, outputs, pipes[i][1]))
+        else:
+            args = (model, games_left, i, {get_cpu(i)})
+
+        p = mp.Process(target=worker, args=args)
         p.start()
         processes.append(p)
+
+    # Close copies of the pipes so the server stops once all workers finish
+    if INFERENCE_SERVER:
+        for server_end, worker_end in pipes:
+            server_end.close()
+            worker_end.close()
     
     for p in processes:
         p.join()
 
     # Fail loudly instead of silently losing games
     failed = [i for i, p in enumerate(processes, 1) if p.exitcode != 0]
+
+    if INFERENCE_SERVER:
+        server.join()
+
+        if server.exitcode != 0 and not failed:
+            raise RuntimeError("Inference server failed (see traceback above)")
+
     if failed:
         raise RuntimeError(f"Self-play workers {failed} failed (see traceback above)")
 

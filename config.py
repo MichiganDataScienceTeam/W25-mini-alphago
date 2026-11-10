@@ -28,6 +28,7 @@ MAX_MOVES = 9*9*2
 
 # Multiprocessing params
 PROCESSES = 16
+WORKERS_PER_PROCESS = 3  # Self-play workers per process when using the inference server
 
 # Device
 import torch
@@ -37,3 +38,7 @@ elif torch.backends.mps.is_available():
     DEVICE  = torch.device("mps")
 else:
     DEVICE = torch.device("cpu")
+
+# Batch self-play network evaluations on the GPU (see inference_server.py)
+# MPS is too slow for small batches, so only use it with CUDA
+INFERENCE_SERVER = DEVICE.type == "cuda"

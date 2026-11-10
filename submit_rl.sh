@@ -14,7 +14,7 @@
 #SBATCH --nodes=1                   # Number of nodes
 #SBATCH --ntasks-per-node=1         # Number of tasks per node
 #SBATCH --cpus-per-task=17          # Number of CPUs per task (PROCESSES in config.py + 1)
-#SBATCH --mem=48G                   # Total memory for the job (~1.5GB per self-play process)
+#SBATCH --mem=48G                   # Total memory for the job (~0.5GB per self-play worker)
 #SBATCH --time=3-00:00:00           # Maximum runtime
 #SBATCH --gpus=1                    # Number of GPUs
 #SBATCH --partition=gpu             # Partition to use

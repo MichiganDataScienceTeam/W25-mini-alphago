@@ -96,7 +96,7 @@ class SupervisedLearningBot(Bot):
 
 
 class MonteCarloBot(Bot):
-    def __init__(self, model: NeuralNet = None, device: str = DEVICE, always_allow_pass: bool = False):
+    def __init__(self, model: NeuralNet = None, device: str = DEVICE, always_allow_pass: bool = False, evaluator = None):
         """
         Initializes the bot
 
@@ -104,13 +104,15 @@ class MonteCarloBot(Bot):
             model: the NeuralNet model for MCTS
             device: the device to run NN computations on
             always_allow_pass: whether to always allow pass
+            evaluator: optional function used instead of the model (see MonteCarlo)
         """
 
-        if model is None:
+        if model is None and evaluator is None:
             model = NeuralNet()
 
         self.model = model
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), device, always_allow_pass)
+        self.evaluator = evaluator
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), device, always_allow_pass, evaluator)
 
         self.mcts.search()
     
@@ -121,7 +123,7 @@ class MonteCarloBot(Bot):
         """
 
         self.mcts.reset()
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device, always_allow_pass=True)
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device, always_allow_pass=True, evaluator=self.evaluator)
 
 
     def choose_move_tree(self, num_searches: int = 10) -> TreeNode:
