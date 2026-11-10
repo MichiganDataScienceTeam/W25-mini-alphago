@@ -25,7 +25,7 @@ def main():
         print(f"  Training Loss: {train_one_epoch(ds, bot, optimizer)}")
 
         print("  ", end="")
-        save_model(model, "./Great_Lakes_Weights.pt")
+        save_model(model, "./RL_weights.pt")
 
         try:
             update_dataset(ds, bot, tqdm_desc="  Rebuilding dataset: ")
@@ -35,7 +35,7 @@ def main():
             print("  Failed")
 
         print("  ", end="")
-        ds.save("./Great_Lakes_DS.pt")
+        ds.save("./RL_ds.pt")
 
 
 def print_init():

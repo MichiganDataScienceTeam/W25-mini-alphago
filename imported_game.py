@@ -66,17 +66,24 @@ class ImportedGame:
             self.moves = moves
 
 
-    def linked_list(self) -> GameNode:
+    def linked_list(self, moves: list[tuple[int, int]] = None) -> GameNode:
         """
         Returns the tail of a linked list made of
         GameNodes that represents the game. It is
         guaranteed len(node.nexts) <= 1 for all
         nodes in the linked list
+
+        Args:
+            moves (optional): move list to use instead of the game's
+                              moves (e.g. from d4_transformations)
         """
+
+        if moves is None:
+            moves = self.moves
 
         curr = GameNode(9)
 
-        for move in self.moves:
+        for move in moves:
             curr = curr.create_child(move)
         
         return curr
@@ -91,8 +98,11 @@ class ImportedGame:
 
         size = self.meta["size"]
 
-        rotate_90_clockwise = lambda moves: [(move[1], size - move[0] - 1) for move in moves]
-        vertical_flip = lambda moves: [(size - move[0] - 1, move[1]) for move in moves]
+        # Passes are unchanged by transformations
+        is_pass = lambda move: move == (-1, -1)
+
+        rotate_90_clockwise = lambda moves: [move if is_pass(move) else (move[1], size - move[0] - 1) for move in moves]
+        vertical_flip = lambda moves: [move if is_pass(move) else (size - move[0] - 1, move[1]) for move in moves]
 
         I = self.moves
 

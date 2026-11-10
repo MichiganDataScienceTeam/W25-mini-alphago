@@ -15,6 +15,12 @@ from config import *
 TEMP_FILE_PATH = "temp_files"
 TEMP_FILE_PREFIX = "temp_ds_file"
 
+# CPUs assigned to this process (SLURM may not assign CPUs 0 to n)
+try:
+    AVAILABLE_CPUS = sorted(os.sched_getaffinity(0))
+except AttributeError:
+    AVAILABLE_CPUS = None
+
 
 def set_start_method_auto() -> None:
     """
@@ -24,7 +30,7 @@ def set_start_method_auto() -> None:
     mp.set_start_method('spawn', force=True)
 
 
-def worker(model: NeuralNet, games: int, n: int) -> float:
+def worker(model: NeuralNet, games: int, n: int, cpu: int) -> float:
     """
     Runs one self-play game and saves its positional data
     to the specified filepath and returns the time elapsed
@@ -32,11 +38,12 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
     Args:
         model: the neural net (shared memory)
         n: the index of this worker
+        cpu: the CPU to run this worker on
     """
 
     torch.set_num_threads(1)
     try:
-        os.sched_setaffinity(0, {n})
+        os.sched_setaffinity(0, {cpu})
     except:
         pass
 
@@ -57,6 +64,20 @@ def worker(model: NeuralNet, games: int, n: int) -> float:
     torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
 
+def get_cpu(n: int) -> int:
+    """
+    Returns the nth CPU assigned to this process
+
+    Args:
+        n: the index of the CPU
+    """
+
+    if AVAILABLE_CPUS is None:
+        return n
+
+    return AVAILABLE_CPUS[n % len(AVAILABLE_CPUS)]
+
+
 def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process: int, verbose=False) -> None:
     """
     Adds n_processes * games_per_process self-play games
@@ -72,7 +93,7 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
 
     torch.set_num_threads(1)
     try:
-        os.sched_setaffinity(0, {0})
+        os.sched_setaffinity(0, {get_cpu(0)})
     except:
         pass
 
@@ -89,7 +110,7 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
 
     processes = []
     for i in range(1, n_processes+1):
-        p = mp.Process(target=worker, args=(model, games_per_process, i))
+        p = mp.Process(target=worker, args=(model, games_per_process, i, get_cpu(i)))
         p.start()
         processes.append(p)
     
@@ -158,4 +179,4 @@ def update_dataset(ds: Dataset, model_path: str, n_processes: int, games_per_pro
 
 
 if __name__ == "__main__":
-    create_dataset("Great_Lakes_Weights.pt", 4, 1, True)
+    create_dataset("RL_weights.pt", 4, 1, True)

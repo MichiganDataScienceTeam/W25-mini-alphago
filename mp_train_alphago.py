@@ -8,8 +8,8 @@ from network import NeuralNet, save_model, load_model
 def main():
     print_init()
 
-    MODEL_PATH = "./Great_Lakes_Weights.pt"
-    DS_PATH = "./Great_Lakes_DS.pt"
+    MODEL_PATH = "./RL_weights.pt"
+    DS_PATH = "./RL_ds.pt"
 
     print("Loading model ... ", end="")
     model = NeuralNet()

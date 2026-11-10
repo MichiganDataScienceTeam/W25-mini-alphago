@@ -13,6 +13,11 @@ LEARNING_RATE = .001
 EPOCHS = 100_000
 BATCH_SIZE = 64
 
+# SL params
+SL_EPOCHS = 20
+SL_VAL_FRACTION = 0.1  # Fraction of games/ held out for validation (in addition to val_games/)
+SL_AUGMENT = True  # Train on all 8 symmetries of each game
+
 # RL params
 SELF_PLAY_KEEP_PROB = 0.2
 NEW_GAMES_PER_DS = 256  # Not fully implemented for mp: Must be divisible by PROCESSES

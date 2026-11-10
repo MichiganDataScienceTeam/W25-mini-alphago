@@ -3,3 +3,5 @@ __pycache__
 *.pt
 *.pkl
 .DS_Store
+*.log
+temp_files

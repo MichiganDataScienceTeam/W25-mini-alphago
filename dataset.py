@@ -31,27 +31,47 @@ class Dataset:
         return self.positional_data[idx]
 
 
-    def load_dir(self, game_directory: str) -> None:
+    def load_dir(self, game_directory: str, augment: bool = False) -> None:
         """
         Loads all files in specified directory assuming all files
         are valid Go games in SGF format
 
         Args:
             game_directory: path to the directory to load from
+            augment: whether to add all 8 symmetries of each game
         """
 
-        dirs = os.listdir(game_directory)
+        filepaths = [os.path.join(game_directory, game_file)
+                     for game_file in sorted(os.listdir(game_directory))]
 
-        for i, game_file in enumerate(dirs):
-            print(f"[{i+1}/{len(dirs)}] Loading game {game_file}")
-            filepath = os.path.join(game_directory, game_file)
+        self.load_files(filepaths, augment)
+
+
+    def load_files(self, filepaths: List[str], augment: bool = False) -> None:
+        """
+        Loads all specified files assuming all files are
+        valid Go games in SGF format
+
+        Args:
+            filepaths: paths to the files to load
+            augment: whether to add all 8 symmetries of each game
+        """
+
+        for i, filepath in enumerate(filepaths):
+            print(f"[{i+1}/{len(filepaths)}] Loading game {filepath}")
             this_game = ImportedGame(filepath)
 
-            # Iterate through the game
-            node = this_game.linked_list()
             final_eval = this_game.meta.get("final_eval")
 
-            self.add_sl_game(node, final_eval)
+            if augment:
+                move_lists = this_game.d4_transformations()
+            else:
+                move_lists = [this_game.moves]
+
+            # Iterate through the game
+            for moves in move_lists:
+                node = this_game.linked_list(moves)
+                self.add_sl_game(node, final_eval)
 
 
     def add_sl_game(self, node: GameNode, final_eval: float) -> None:
