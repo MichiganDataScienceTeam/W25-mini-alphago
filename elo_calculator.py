@@ -18,7 +18,7 @@ class Elo_calculator:
         min_elo: global minimum elo for players
         max_gain: aka the "K-factor" for elo calculations
         default_elo: the initial elo
-        prev_elo_data: path to elo json (overwrites other params)
+        prev_elo_data: path to elo json (overwrites initial elos)
     """
 
 
@@ -30,6 +30,9 @@ class Elo_calculator:
         self.min_elo = min_elo
         self.max_gain = max_gain
         self.default_elo = default_elo
+
+        # Loaded elos to use on register: Dict[name: str, elo: float]
+        self.loaded_elos = {}
 
         # Load the data saved from the previous elo counter
         if prev_elo_data is not None:
@@ -47,9 +50,9 @@ class Elo_calculator:
         """
 
         if name in self.players.keys():
-            raise ValueError(f"Name {name} not found")
+            raise ValueError(f"Name {name} already registered")
         
-        self.players[name] = [self.default_elo, bot]
+        self.players[name] = [self.loaded_elos.get(name, self.default_elo), bot]
 
 
     def save(self, file_path: str):
@@ -72,14 +75,23 @@ class Elo_calculator:
 
     def load(self, file_path):
         """
-        Load data from a json file
+        Load elos from a json file
+
+        Args:
+            file_path: path to json file to load from
         """
         
         with open(file_path, 'r') as file:
             data = json.load(file)
         
         if isinstance(data, dict):
-            self.__dict__.update(data)
+            self.loaded_elos.update(data)
+
+            # Update already registered players
+            for name, elo in data.items():
+                if name in self.players.keys():
+                    self.players[name][0] = elo
+
             print(f"Data loaded from {file_path}")
         else:
             raise ValueError("The json file does not contain a valid dictionary.")

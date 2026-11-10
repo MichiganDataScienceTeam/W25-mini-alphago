@@ -173,7 +173,9 @@ class GoLoss(torch.nn.Module):
 
     def forward(self, z: torch.Tensor, z_hat: torch.Tensor, pi: torch.Tensor, pi_hat: torch.Tensor):
         value_loss = torch.nn.functional.mse_loss(z_hat, z) * self.mse_weight
-        policy_loss = torch.nn.functional.cross_entropy(pi_hat, pi)
+
+        # PolicyHead already applies softmax, so cross_entropy would apply it twice
+        policy_loss = -(pi * torch.log(pi_hat.clamp_min(1e-8))).sum(dim=-1).mean()
 
         return value_loss + policy_loss
 

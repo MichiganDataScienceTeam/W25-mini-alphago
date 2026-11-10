@@ -66,18 +66,34 @@ def update_dataset(ds: Dataset, bot: MonteCarloBot, tqdm_desc: str = "") -> None
         ds.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
 
 
-def train_one_epoch(ds: Dataset, bot: MonteCarloBot) -> float:
+def make_optimizer(model: torch.nn.Module) -> torch.optim.Optimizer:
+    """
+    Creates the optimizer for RL training
+
+    Reuse the same optimizer across epochs to keep its state
+
+    Args:
+        model: the NeuralNet to optimize
+    """
+
+    return torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+
+
+def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Optimizer = None) -> float:
     """
     Trains a bot for one epoch on the produced dataset
 
     Args:
         ds: Dataset to train on
         bot: bot containing the model to train
+        optimizer: optimizer from make_optimizer (creates a new one if None)
     """
 
     dl = torch.utils.data.DataLoader(ds, batch_size=BATCH_SIZE, shuffle=True)
 
-    optimizer = torch.optim.AdamW(bot.model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+    if optimizer is None:
+        optimizer = make_optimizer(bot.model)
+
     criterion = GoLoss(1) # Balanced cross-entropy and mse
 
     train_loss = 0
@@ -109,11 +125,13 @@ if __name__ == "__main__":
     ds = create_dataset(bot)
     print("Done")
 
+    optimizer = make_optimizer(bot.model)
+
     for i in range(EPOCHS):
         print(f"Epoch {i+1} - Training Loss: ", end="")
-        print(train_one_epoch(ds, bot))
+        print(train_one_epoch(ds, bot, optimizer))
 
         print("Rebuilding dataset... ", end="")
-        update_dataset(ds)
+        update_dataset(ds, bot)
         print("Done")
 

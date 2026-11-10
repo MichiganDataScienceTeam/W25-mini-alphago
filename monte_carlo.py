@@ -118,7 +118,13 @@ class MonteCarlo:
 
         for child in node.nexts:
             move = child.prev_move
-            i = move[0] * self.curr.size + move[1]
+
+            # Handle pass
+            if move == (-1, -1):
+                i = node.size * node.size
+            else:
+                i = move[0] * node.size + move[1]
+
             child.prior = prior[i]
     
 

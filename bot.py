@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import torch
 
 from typing import Tuple
 
@@ -73,15 +74,25 @@ class SupervisedLearningBot(Bot):
         
         input_tensor = node_to_tensor(self.curr).unsqueeze(0)
 
-        prior, value = self.model.forward(input_tensor)
-        next_moves = self.curr.available_moves()
+        self.model.eval()
+        with torch.no_grad():
+            prior, value = self.model.forward(input_tensor)
 
         #Don't need tensor in a batch or for computation, just want to sample a single thing from it
-        prior = prior[0].detach().cpu().numpy()
+        prior = prior[0].cpu().numpy().astype(np.float64)
+
+        # Only sample valid moves
+        prior *= self.curr.available_moves_mask()
+        prior /= prior.sum()
 
         action_index = np.random.choice(len(prior), p=prior)
 
-        return next_moves[action_index % len(next_moves)]
+        # Handle pass
+        size = self.curr.size
+        if action_index == size * size:
+            return (-1, -1)
+
+        return (action_index // size, action_index % size)
 
 
 class MonteCarloBot(Bot):

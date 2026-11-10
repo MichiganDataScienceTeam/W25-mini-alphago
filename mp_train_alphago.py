@@ -1,5 +1,5 @@
 from config import *
-from reinforcement_learning import train_one_epoch
+from reinforcement_learning import train_one_epoch, make_optimizer
 from mp_self_play import create_dataset, update_dataset
 from bot import MonteCarloBot
 from network import NeuralNet, save_model, load_model
@@ -24,9 +24,11 @@ def main():
     print("Building initial dataset...")
     ds = create_dataset(MODEL_PATH, PROCESSES, RL_DS_SIZE//PROCESSES, True)
 
+    optimizer = make_optimizer(model)
+
     for i in range(EPOCHS):
         print(f"Epoch {i+1}")
-        print(f"  Training Loss: {train_one_epoch(ds, bot)}")
+        print(f"  Training Loss: {train_one_epoch(ds, bot, optimizer)}")
 
         print("  ", end="")
         save_model(model, MODEL_PATH)

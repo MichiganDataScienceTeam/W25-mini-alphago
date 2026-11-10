@@ -1,5 +1,5 @@
 from config import *
-from reinforcement_learning import create_dataset, update_dataset, train_one_epoch
+from reinforcement_learning import create_dataset, update_dataset, train_one_epoch, make_optimizer
 from bot import MonteCarloBot
 from network import NeuralNet, save_model, load_model
 
@@ -18,9 +18,11 @@ def main():
     ds = create_dataset(bot, tqdm_desc="Building initial dataset")
     print("")
 
+    optimizer = make_optimizer(model)
+
     for i in range(EPOCHS):
         print(f"Epoch {i+1}")
-        print(f"  Training Loss: {train_one_epoch(ds, bot)}")
+        print(f"  Training Loss: {train_one_epoch(ds, bot, optimizer)}")
 
         print("  ", end="")
         save_model(model, "./Great_Lakes_Weights.pt")

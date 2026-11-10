@@ -132,7 +132,7 @@ def network():
 
     policy, val = model(node_to_tensor(tree.curr).unsqueeze(0))
 
-    policy = policy.softmax(1).flatten().detach()
+    policy = policy.flatten().detach() # Already softmaxed by the PolicyHead
 
     policy /= policy.max()
     policy = policy / 5
