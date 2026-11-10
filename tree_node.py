@@ -122,7 +122,11 @@ class TreeNode(GameNode):
         Ordered by nexts
         """
 
-        logits = np.array([child.num_visits + 1 for child in self.nexts])
+        logits = np.array([child.num_visits for child in self.nexts], dtype=np.float64)
+
+        # Fall back to uniform if no children were visited
+        if logits.sum() == 0:
+            logits = np.ones_like(logits)
 
         if self.move < NUM_MOVES_MAX_TEMPERATURE:
             logits = logits ** (1 / 1)
