@@ -129,9 +129,6 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
 
         inputs, outputs = make_buffers(n_workers + 1)
         pipes = [mp.Pipe() for _ in range(n_workers + 1)]
-
-        server = mp.Process(target=serve, args=(model, inputs, outputs, [None] + [pipe[0] for pipe in pipes[1:]]))
-        server.start()
     else:
         n_workers = n_processes
 
@@ -146,29 +143,35 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         p.start()
         processes.append(p)
 
-    # Close copies of the pipes so the server stops once all workers finish
-    if INFERENCE_SERVER:
-        for server_end, worker_end in pipes:
-            server_end.close()
-            worker_end.close()
-    
     # Show progress (and time until training) while the workers play
     with tqdm(total=n_games, desc="  Self-play", unit="game", mininterval=10) as bar:
-        while any(p.is_alive() for p in processes):
-            sleep(1)
-            bar.update(games_done.value - bar.n)
+        update_bar = lambda: bar.update(games_done.value - bar.n)
+
+        if INFERENCE_SERVER:
+            # Close copies of the worker ends so serving stops once all workers finish
+            for _, worker_end in pipes:
+                worker_end.close()
+
+            # Serve in this process since it already uses the GPU
+            # (cluster GPUs may only allow one process at a time)
+            try:
+                serve(model, inputs, outputs, [None] + [pipe[0] for pipe in pipes[1:]], progress=update_bar)
+            finally:
+                # Unblock waiting workers if serving failed
+                for server_end, _ in pipes:
+                    server_end.close()
+        else:
+            while any(p.is_alive() for p in processes):
+                sleep(1)
+                update_bar()
+
+        update_bar()
 
     for p in processes:
         p.join()
 
     # Fail loudly instead of silently losing games
     failed = [i for i, p in enumerate(processes, 1) if p.exitcode != 0]
-
-    if INFERENCE_SERVER:
-        server.join()
-
-        if server.exitcode != 0 and not failed:
-            raise RuntimeError("Inference server failed (see traceback above)")
 
     if failed:
         raise RuntimeError(f"Self-play workers {failed} failed (see traceback above)")

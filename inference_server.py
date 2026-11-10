@@ -1,6 +1,8 @@
 import numpy as np
 import torch
 
+from time import perf_counter
+
 from multiprocessing.connection import Connection, wait
 from numpy.typing import NDArray
 from typing import List, Tuple
@@ -66,20 +68,22 @@ def make_buffers(n_clients: int, size: int = 9) -> Tuple[torch.Tensor, torch.Ten
     return inputs, outputs
 
 
-def serve(model: NeuralNet, inputs: torch.Tensor, outputs: torch.Tensor, conns: List[Connection], device: str = DEVICE) -> None:
+def serve(model: NeuralNet, inputs: torch.Tensor, outputs: torch.Tensor, conns: List[Connection], device: str = DEVICE, progress = None) -> None:
     """
     Evaluates positions from all clients in batches until
     every client has closed its pipe
 
+    Run this in the process that already uses the GPU, since
+    cluster GPUs may only allow one process at a time
+
     Args:
-        model: the neural net (shared memory)
+        model: the neural net
         inputs: shared tensor of positions, one per client
         outputs: shared tensor of [value, *policy], one per client
         conns: server end of each client's pipe (indexed by client)
         device: the device to evaluate on
+        progress: optional function called about once per second
     """
-
-    torch.set_num_threads(1)
 
     model = model.to(device)
     model.eval()
@@ -87,7 +91,13 @@ def serve(model: NeuralNet, inputs: torch.Tensor, outputs: torch.Tensor, conns: 
     # Client index of each open pipe
     open_conns = {conn: n for n, conn in enumerate(conns) if conn is not None}
 
+    last_progress = perf_counter()
+
     while len(open_conns) > 0:
+        if progress is not None and perf_counter() - last_progress > 1:
+            progress()
+            last_progress = perf_counter()
+
         ns = []
 
         # Batch every client that is waiting
