@@ -30,13 +30,14 @@ def set_start_method_auto() -> None:
     mp.set_start_method('spawn', force=True)
 
 
-def worker(model: NeuralNet, games: int, n: int, cpu: int) -> float:
+def worker(model: NeuralNet, games_left: mp.Value, n: int, cpu: int) -> None:
     """
-    Runs one self-play game and saves its positional data
-    to the specified filepath and returns the time elapsed
+    Plays self-play games until no games are left and saves
+    their positional data to a temp file
 
     Args:
         model: the neural net (shared memory)
+        games_left: shared count of games left to play
         n: the index of this worker
         cpu: the CPU to run this worker on
     """
@@ -53,7 +54,14 @@ def worker(model: NeuralNet, games: int, n: int, cpu: int) -> float:
 
     temp_ds = Dataset()
 
-    for _ in range(games):
+    while True:
+        # Take the next game (workers finishing early take more games)
+        with games_left.get_lock():
+            if games_left.value == 0:
+                break
+
+            games_left.value -= 1
+
         bot.reset()
         tree, winner = self_play(bot)
 
@@ -87,7 +95,7 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
         ds: the Dataset to modify
         model: the NeuralNet to use
         n_processes: the number of processes to use
-        games_per_process: the number of games played by each process
+        games_per_process: the average number of games played by each process
         verbose: whether or not to write logs
     """
 
@@ -108,9 +116,11 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     print("Multiprocessing Progress:")
     print("X"*(n_processes * games_per_process))
 
+    games_left = mp.Value("i", n_processes * games_per_process)
+
     processes = []
     for i in range(1, n_processes+1):
-        p = mp.Process(target=worker, args=(model, games_per_process, i, get_cpu(i)))
+        p = mp.Process(target=worker, args=(model, games_left, i, get_cpu(i)))
         p.start()
         processes.append(p)
     
