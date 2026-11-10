@@ -117,6 +117,11 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     for p in processes:
         p.join()
 
+    # Fail loudly instead of silently losing games
+    failed = [i for i, p in enumerate(processes, 1) if p.exitcode != 0]
+    if failed:
+        raise RuntimeError(f"Self-play workers {failed} failed (see traceback above)")
+
     for filename in os.listdir(TEMP_FILE_PATH):
         if not filename.startswith(TEMP_FILE_PREFIX):
             raise FileExistsError(f"Temp file directory must only have temp files. Found {filename} instead.")

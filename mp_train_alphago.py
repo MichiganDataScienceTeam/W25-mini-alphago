@@ -33,13 +33,8 @@ def main():
         print("  ", end="")
         save_model(model, MODEL_PATH)
 
-        try:
-            print("Rebuilding dataset:")
-            update_dataset(ds, MODEL_PATH, PROCESSES, NEW_GAMES_PER_DS//PROCESSES, True)
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            print("Failed")
+        print("Rebuilding dataset:")
+        update_dataset(ds, MODEL_PATH, PROCESSES, NEW_GAMES_PER_DS//PROCESSES, True)
 
         print("  ", end="")
         ds.save(DS_PATH)

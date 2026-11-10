@@ -27,12 +27,7 @@ def main():
         print("  ", end="")
         save_model(model, "./RL_weights.pt")
 
-        try:
-            update_dataset(ds, bot, tqdm_desc="  Rebuilding dataset: ")
-        except KeyboardInterrupt:
-            raise KeyboardInterrupt()
-        except:
-            print("  Failed")
+        update_dataset(ds, bot, tqdm_desc="  Rebuilding dataset: ")
 
         print("  ", end="")
         ds.save("./RL_ds.pt")
