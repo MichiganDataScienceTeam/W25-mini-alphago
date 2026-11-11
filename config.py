@@ -5,7 +5,7 @@ KERNEL = 3
 NUM_RESIDUALS = 19
 
 # Search parameters
-C_PUCT = 5
+C_PUCT = 2.5  # AlphaZero's 1.25 doubled since our values are in [-1, 1] instead of [0, 1]
 SEARCHES_PER_MOVE = 64
 
 # Training parameters
@@ -30,7 +30,7 @@ NUM_MOVES_MAX_TEMPERATURE = 32
 MAX_MOVES = 9*9*2
 DIRICHLET_ALPHA = 0.15  # Root noise for self-play exploration (about 10 / number of moves, like KataGo)
 DIRICHLET_FRACTION = 0.25  # Weight of the noise in the root priors (same as AlphaGo Zero)
-RL_INIT_WEIGHTS = "SL_weights.pt"  # Weights to start RL from (None for random, RL_weights.pt to resume)
+RL_INIT_WEIGHTS = "RL_weights.pt"  # Weights to start RL from (None for random, RL_weights.pt to resume)
 RL_CHECKPOINT_EVERY = 25  # Epochs between saved copies of the weights (to roll back if training breaks)
 
 # Multiprocessing params

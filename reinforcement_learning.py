@@ -160,6 +160,37 @@ def random_symmetry(s: torch.Tensor, pi: torch.Tensor) -> Tuple[torch.Tensor, to
     return s, torch.cat([board_pi.reshape(len(pi), -1), pi[:, -1:]], dim=1)
 
 
+def evaluate_loss(positions: list, model: torch.nn.Module) -> Tuple[float, float, float]:
+    """
+    Returns the mean (total, value, policy) loss on positions without training
+
+    Use on new games before training on them, a loss much higher
+    than the training loss means the model is memorizing old games
+
+    Args:
+        positions: list of (s, z, pi) from a Dataset
+        model: the NeuralNet to evaluate
+    """
+
+    dl = torch.utils.data.DataLoader(positions, batch_size=BATCH_SIZE)
+
+    criterion = GoLoss(1)
+
+    total_loss = value_loss = policy_loss = 0
+    model = model.to(DEVICE)
+    model.eval()
+
+    with torch.no_grad():
+        for s, z, pi in dl:
+            pi_hat, z_hat = model(s.to(DEVICE))
+
+            total_loss += criterion(z.to(DEVICE), z_hat, pi.to(DEVICE), pi_hat).item()
+            value_loss += criterion.value_loss.item()
+            policy_loss += criterion.policy_loss.item()
+
+    return total_loss / len(dl), value_loss / len(dl), policy_loss / len(dl)
+
+
 def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Optimizer = None) -> Tuple[float, float, float]:
     """
     Trains a bot for one epoch on the produced dataset and

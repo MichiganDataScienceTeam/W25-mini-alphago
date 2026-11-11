@@ -1,7 +1,7 @@
 import os
 
 from config import *
-from reinforcement_learning import train_one_epoch, make_optimizer
+from reinforcement_learning import train_one_epoch, make_optimizer, evaluate_loss
 from mp_self_play import create_dataset, update_dataset
 from bot import MonteCarloBot
 from network import NeuralNet, save_model, load_model
@@ -12,7 +12,8 @@ def main():
 
     MODEL_PATH = "./RL_weights.pt"
     DS_PATH = "./RL_ds.pt"
-    CHECKPOINT_PATH = "./checkpoints"
+    # Separate folder per job so resuming doesn't overwrite old checkpoints
+    CHECKPOINT_PATH = os.path.join("./checkpoints", os.environ.get("SLURM_JOB_ID", "local"))
 
     if RL_INIT_WEIGHTS is None:
         print("Loading model ... ", end="")
@@ -34,6 +35,12 @@ def main():
 
     for i in range(EPOCHS):
         print(f"Epoch {i+1}")
+
+        # Newest games haven't been trained on yet
+        new_positions = ds.positional_data[ds.start_indices[-NEW_GAMES_PER_DS]:]
+        loss, value_loss, policy_loss = evaluate_loss(new_positions, model)
+        print(f"  New Games Loss: {loss} (value {value_loss}, policy {policy_loss})")
+
         loss, value_loss, policy_loss = train_one_epoch(ds, bot, optimizer)
         print(f"  Training Loss: {loss} (value {value_loss}, policy {policy_loss})")
 
