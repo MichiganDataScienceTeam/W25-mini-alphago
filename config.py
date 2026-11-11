@@ -22,7 +22,7 @@ SL_AUGMENT = True  # Train on all 8 symmetries of each game
 SELF_PLAY_KEEP_PROB = 0.2
 NEW_GAMES_PER_DS = 256  # Not fully implemented for mp: Must be divisible by PROCESSES
 RL_DS_SIZE = NEW_GAMES_PER_DS * 2
-NUM_MOVES_ALLOW_PASS = 9*9
+NUM_MOVES_ALLOW_PASS = 40  # Most 9x9 pro games last 36 to 53 moves, so passing earlier is almost always a mistake
 NUM_MOVES_MAX_TEMPERATURE = 32
 MAX_MOVES = 9*9*2
 
