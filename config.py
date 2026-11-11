@@ -6,7 +6,7 @@ NUM_RESIDUALS = 19
 
 # Search parameters
 C_PUCT = 5
-SEARCHES_PER_MOVE = 32
+SEARCHES_PER_MOVE = 64
 
 # Training parameters
 LEARNING_RATE = .001
