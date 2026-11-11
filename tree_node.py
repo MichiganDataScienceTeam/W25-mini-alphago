@@ -62,7 +62,15 @@ class TreeNode(GameNode):
     def Q_value(self) -> float:
         """ Compute the Q value (average observed eval) of the node """
 
-        return self.total_value / (1 + self.num_visits)
+        # Unvisited nodes use the parent's average (like Leela Zero and KataGo)
+        # A default of 0 makes the side that is behind try every unvisited move
+        if self.num_visits == 0:
+            if self.prev is None or self.prev.num_visits == 0:
+                return 0
+
+            return self.prev.total_value / self.prev.num_visits
+
+        return self.total_value / self.num_visits
 
 
     def u_value(self) -> float:
