@@ -1,3 +1,5 @@
+import numpy as np
+
 from network import NeuralNet
 from tree_node import TreeNode
 
@@ -162,6 +164,27 @@ class MonteCarlo:
         
         selected.backprop(val)
     
+
+    def add_noise(self) -> None:
+        """
+        Mixes Dirichlet noise into the priors of the current node's children
+        so self-play keeps trying moves the network doesn't like yet
+
+        Only use in self-play, call once per move before searching
+        """
+
+        # The current node needs children to add noise to
+        if len(self.curr.nexts) == 0:
+            self.search()
+
+        if len(self.curr.nexts) == 0:
+            return
+
+        noise = np.random.dirichlet([DIRICHLET_ALPHA] * len(self.curr.nexts))
+
+        for child, n in zip(self.curr.nexts, noise):
+            child.prior = (1 - DIRICHLET_FRACTION) * child.prior + DIRICHLET_FRACTION * n
+
 
     def move_curr(self, loc: Tuple[int, int]) -> None:
         """

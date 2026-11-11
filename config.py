@@ -25,6 +25,10 @@ RL_DS_SIZE = NEW_GAMES_PER_DS * 2
 NUM_MOVES_ALLOW_PASS = 40  # Most 9x9 pro games last 36 to 53 moves, so passing earlier is almost always a mistake
 NUM_MOVES_MAX_TEMPERATURE = 32
 MAX_MOVES = 9*9*2
+DIRICHLET_ALPHA = 0.15  # Root noise for self-play exploration (about 10 / number of moves, like KataGo)
+DIRICHLET_FRACTION = 0.25  # Weight of the noise in the root priors (same as AlphaGo Zero)
+RL_INIT_WEIGHTS = "SL_weights.pt"  # Weights to start RL from (None for random, RL_weights.pt to resume)
+RL_CHECKPOINT_EVERY = 25  # Epochs between saved copies of the weights (to roll back if training breaks)
 
 # Multiprocessing params
 PROCESSES = 16

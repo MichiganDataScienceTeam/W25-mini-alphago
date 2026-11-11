@@ -1,10 +1,13 @@
+import numpy as np
 import torch
 
 from tqdm import tqdm
+from typing import List, Tuple
 
 from bot import MonteCarloBot
 from dataset import Dataset
 from network import GoLoss
+from tree_node import TreeNode
 
 from config import *
 
@@ -25,6 +28,9 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     # Play the game
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
+        # Explore moves the network doesn't like yet
+        bot.mcts.add_noise()
+
         new_curr = bot.choose_move_tree(SEARCHES_PER_MOVE)
         bot.mcts.curr = new_curr
         move = new_curr.prev_move
@@ -36,6 +42,48 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
             print(bot.mcts.curr)
 
     return (bot.mcts.curr, bot.mcts.curr.compute_winner())
+
+
+def game_stats(node: TreeNode, winner: int) -> Tuple[int, int, int]:
+    """
+    Returns (number of moves, winner, move number of the first pass or 0)
+    of a self-play game
+
+    Args:
+        node: the last TreeNode in the game
+        winner: the winner from compute_winner
+    """
+
+    first_pass = 0
+    curr = node
+
+    while curr.prev is not None:
+        if curr.prev_move == (-1, -1):
+            first_pass = curr.move
+
+        curr = curr.prev
+
+    return node.move, winner, first_pass
+
+
+def print_stats(stats: List[Tuple[int, int, int]]) -> None:
+    """
+    Prints a summary of self-play games to catch problems early
+    (like passing as soon as allowed or games never ending)
+
+    Args:
+        stats: list of game_stats for each game
+    """
+
+    moves, winners, first_passes = (np.array(x) for x in zip(*stats))
+    passed = first_passes[first_passes > 0]
+
+    print(f"  Self-play stats ({len(stats)} games):")
+    print(f"    Average length: {moves.mean():.1f} moves (min {moves.min()}, max {moves.max()})")
+    print(f"    Ended as soon as passing was allowed: {np.mean(moves <= NUM_MOVES_ALLOW_PASS + 2):.0%}")
+    print(f"    Hit MAX_MOVES: {np.mean(moves >= MAX_MOVES):.0%}")
+    print(f"    Black win rate: {np.mean(winners == 1):.0%}")
+    print(f"    Average first pass: move {passed.mean() if len(passed) > 0 else 0:.1f}")
 
 
 def create_dataset(bot: MonteCarloBot, tqdm_desc: str = "") -> Dataset:

@@ -1,3 +1,5 @@
+import os
+
 from config import *
 from reinforcement_learning import train_one_epoch, make_optimizer
 from mp_self_play import create_dataset, update_dataset
@@ -10,10 +12,14 @@ def main():
 
     MODEL_PATH = "./RL_weights.pt"
     DS_PATH = "./RL_ds.pt"
+    CHECKPOINT_PATH = "./checkpoints"
 
-    print("Loading model ... ", end="")
-    model = NeuralNet()
-    print("Done")
+    if RL_INIT_WEIGHTS is None:
+        print("Loading model ... ", end="")
+        model = NeuralNet()
+        print("Done")
+    else:
+        model = load_model(RL_INIT_WEIGHTS)
 
     save_model(model, MODEL_PATH)
 
@@ -32,6 +38,12 @@ def main():
 
         print("  ", end="")
         save_model(model, MODEL_PATH)
+
+        # Keep old weights to roll back to if training breaks
+        if (i + 1) % RL_CHECKPOINT_EVERY == 0:
+            os.makedirs(CHECKPOINT_PATH, exist_ok=True)
+            print("  ", end="")
+            save_model(model, os.path.join(CHECKPOINT_PATH, f"RL_weights_{i+1}.pt"))
 
         print("Rebuilding dataset:")
         update_dataset(ds, MODEL_PATH, PROCESSES, NEW_GAMES_PER_DS//PROCESSES, True)
@@ -60,6 +72,10 @@ RL_DS_SIZE: {RL_DS_SIZE}
 NUM_MOVES_ALLOW_PASS: {NUM_MOVES_ALLOW_PASS}
 NUM_MOVES_MAX_TEMPERATURE: {NUM_MOVES_MAX_TEMPERATURE}
 MAX_MOVES: {MAX_MOVES}
+DIRICHLET_ALPHA: {DIRICHLET_ALPHA}
+DIRICHLET_FRACTION: {DIRICHLET_FRACTION}
+RL_INIT_WEIGHTS: {RL_INIT_WEIGHTS}
+RL_CHECKPOINT_EVERY: {RL_CHECKPOINT_EVERY}
 PROCESSES: {PROCESSES}
 INFERENCE_SERVER: {INFERENCE_SERVER}
 WORKERS_PER_PROCESS: {WORKERS_PER_PROCESS}""")

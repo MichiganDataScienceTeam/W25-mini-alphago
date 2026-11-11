@@ -7,7 +7,7 @@ from torch import multiprocessing as mp
 
 from network import NeuralNet, load_model
 from bot import MonteCarloBot
-from reinforcement_learning import self_play
+from reinforcement_learning import self_play, game_stats, print_stats
 from dataset import Dataset
 from inference_server import InferenceClient, make_buffers, serve
 
@@ -57,6 +57,7 @@ def worker(model: NeuralNet, games_left: mp.Value, games_done: mp.Value, n: int,
     bot = MonteCarloBot(model, "cpu", evaluator=evaluator)
 
     temp_ds = Dataset()
+    stats = []
 
     while True:
         # Take the next game (workers finishing early take more games)
@@ -70,11 +71,12 @@ def worker(model: NeuralNet, games_left: mp.Value, games_done: mp.Value, n: int,
         tree, winner = self_play(bot)
 
         temp_ds.add_rl_game(tree, winner)
+        stats.append(game_stats(tree, winner))
 
         with games_done.get_lock():
             games_done.value += 1
 
-    torch.save(temp_ds, os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
+    torch.save((temp_ds, stats), os.path.join(TEMP_FILE_PATH, f"{TEMP_FILE_PREFIX}_{n}.pt"))
 
 
 def get_cpu(n: int) -> int:
@@ -176,18 +178,23 @@ def add_games(ds: Dataset, model: NeuralNet, n_processes: int, games_per_process
     if failed:
         raise RuntimeError(f"Self-play workers {failed} failed (see traceback above)")
 
+    stats = []
+
     for filename in os.listdir(TEMP_FILE_PATH):
         if not filename.startswith(TEMP_FILE_PREFIX):
             raise FileExistsError(f"Temp file directory must only have temp files. Found {filename} instead.")
 
         filepath = os.path.join(TEMP_FILE_PATH, filename)
 
-        ds.merge(torch.load(filepath, weights_only=False))
+        temp_ds, temp_stats = torch.load(filepath, weights_only=False)
+        ds.merge(temp_ds)
+        stats += temp_stats
 
         os.remove(filepath)
     
     if verbose:
         print(f"  Finished in {perf_counter() - start_time}s")
+        print_stats(stats)
 
 
 def create_dataset(model_path: str, n_processes: int, games_per_process: int, verbose: bool = False) -> Dataset:
