@@ -140,9 +140,16 @@ class MonteCarlo:
         """
 
         selected = self.select(self.curr)
+
+        # Use the real result of finished games instead of the network's guess
+        if selected.is_terminal():
+            selected.backprop(selected.compute_winner())
+            return
+
         val, policy = self.evaluate(selected)
 
-        if self.curr.move > NUM_MOVES_ALLOW_PASS:
+        # Check the selected node since the tree is reused between moves
+        if selected.move >= NUM_MOVES_ALLOW_PASS:
             self.expand(selected, policy, allow_pass=True)
         else: 
             self.expand(selected, policy, allow_pass=False)

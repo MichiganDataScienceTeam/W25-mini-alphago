@@ -94,7 +94,8 @@ class TreeNode(GameNode):
 
         self.nexts = [self.create_child(move) for move in self.available_moves()]
 
-        if not allow_pass:
+        # Pass is last, keep it if there are no other moves
+        if not allow_pass and len(self.nexts) > 1:
             self.nexts.pop()
         
         return self.nexts
@@ -115,11 +116,14 @@ class TreeNode(GameNode):
             self.prev.backprop(value)
 
 
-    def get_policy(self) -> torch.Tensor:
+    def get_policy(self, temperature: float = None) -> torch.Tensor:
         """
         Calculates the MTCS policy given by the exponentiated visit count, ie:
         num_visits(action)^(1/temperature)/total_num_visits^(1/temperature)
         Ordered by nexts
+
+        Args:
+            temperature: the temperature to use (None to use the move schedule)
         """
 
         logits = np.array([child.num_visits for child in self.nexts], dtype=np.float64)
@@ -128,10 +132,10 @@ class TreeNode(GameNode):
         if logits.sum() == 0:
             logits = np.ones_like(logits)
 
-        if self.move < NUM_MOVES_MAX_TEMPERATURE:
-            logits = logits ** (1 / 1)
-        else:
-            logits = logits ** (1 / .1)
+        if temperature is None:
+            temperature = 1 if self.move < NUM_MOVES_MAX_TEMPERATURE else .1
+
+        logits = logits ** (1 / temperature)
 
         probs = logits / logits.sum()
 

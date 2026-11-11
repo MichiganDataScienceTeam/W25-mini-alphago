@@ -121,7 +121,7 @@ class MonteCarloBot(Bot):
         """
 
         self.mcts.reset()
-        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device, always_allow_pass=True)
+        self.mcts = MonteCarlo(self.model, TreeNode(GameNode(9)), self.mcts.device, self.mcts.always_allow_pass)
 
 
     def choose_move_tree(self, num_searches: int = 10) -> TreeNode:
@@ -141,8 +141,6 @@ class MonteCarloBot(Bot):
             return None
 
         action_index = np.random.choice(len(probs), p=probs)
-
-        assert((-1, -1) in [x.prev_move for x in self.mcts.curr.nexts])
 
         return self.mcts.curr.nexts[action_index]
 

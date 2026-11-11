@@ -112,7 +112,7 @@ class Dataset:
         while node is not None:
             s = node_to_tensor(node)
             z = torch.tensor([final_eval], dtype=torch.float32)
-            probs = node.get_policy()
+            probs = node.get_policy(temperature=1) # Train on the raw visit counts
 
             BOARD_SIZE = node.size
             pi = torch.zeros(BOARD_SIZE * BOARD_SIZE + 1)
