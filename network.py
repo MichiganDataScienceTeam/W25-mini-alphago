@@ -177,6 +177,10 @@ class GoLoss(torch.nn.Module):
         # PolicyHead already applies softmax, so cross_entropy would apply it twice
         policy_loss = -(pi * torch.log(pi_hat.clamp_min(1e-8))).sum(dim=-1).mean()
 
+        # Keep the parts for logging
+        self.value_loss = value_loss.detach()
+        self.policy_loss = policy_loss.detach()
+
         return value_loss + policy_loss
 
 def save_model(model: nn.Module, filepath: str, prefix: str = "Model saved to") -> None:

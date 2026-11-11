@@ -223,7 +223,8 @@ def create_dataset(model_path: str, n_processes: int, games_per_process: int, ve
 
 def update_dataset(ds: Dataset, model_path: str, n_processes: int, games_per_process: int, verbose: bool = False):
     """
-    Uses multiprocessing to update a self-play dataset
+    Uses multiprocessing to update a self-play dataset,
+    removing the oldest games once it is full
 
     Args:
         ds: the Dataset to update
@@ -233,7 +234,10 @@ def update_dataset(ds: Dataset, model_path: str, n_processes: int, games_per_pro
         verbose: whether or not to write logs
     """
 
-    ds.remove_first_n(n_processes * games_per_process)
+    n_remove = len(ds.start_indices) + n_processes * games_per_process - RL_DS_SIZE
+
+    if n_remove > 0:
+        ds.remove_first_n(n_remove)
 
     set_start_method_auto()
 

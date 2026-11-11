@@ -22,7 +22,8 @@ def main():
 
     for i in range(EPOCHS):
         print(f"Epoch {i+1}")
-        print(f"  Training Loss: {train_one_epoch(ds, bot, optimizer)}")
+        loss, value_loss, policy_loss = train_one_epoch(ds, bot, optimizer)
+        print(f"  Training Loss: {loss} (value {value_loss}, policy {policy_loss})")
 
         print("  ", end="")
         save_model(model, "./RL_weights.pt")
@@ -44,12 +45,14 @@ KERNEL: {KERNEL}
 NUM_RESIDUALS: {NUM_RESIDUALS}
 C_PUCT: {C_PUCT}
 SEARCHES_PER_MOVE: {SEARCHES_PER_MOVE}
-LEARNING_RATE: {LEARNING_RATE}
+RL_LEARNING_RATE: {RL_LEARNING_RATE}
 EPOCHS: {EPOCHS}
 BATCH_SIZE: {BATCH_SIZE}
 SELF_PLAY_KEEP_PROB: {SELF_PLAY_KEEP_PROB}
 NEW_GAMES_PER_DS: {NEW_GAMES_PER_DS}
+RL_DS_START_SIZE: {RL_DS_START_SIZE}
 RL_DS_SIZE: {RL_DS_SIZE}
+RL_AUGMENT: {RL_AUGMENT}
 NUM_MOVES_ALLOW_PASS: {NUM_MOVES_ALLOW_PASS}
 NUM_MOVES_MAX_TEMPERATURE: {NUM_MOVES_MAX_TEMPERATURE}
 MAX_MOVES: {MAX_MOVES}""")

@@ -94,7 +94,7 @@ def create_dataset(bot: MonteCarloBot, tqdm_desc: str = "") -> Dataset:
 
     out = Dataset()
 
-    for _ in tqdm(range(RL_DS_SIZE), desc=tqdm_desc):
+    for _ in tqdm(range(RL_DS_START_SIZE), desc=tqdm_desc):
         tree, winner = self_play(bot)
         out.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
     
@@ -103,11 +103,14 @@ def create_dataset(bot: MonteCarloBot, tqdm_desc: str = "") -> Dataset:
 
 def update_dataset(ds: Dataset, bot: MonteCarloBot, tqdm_desc: str = "") -> None:
     """
-    Replaces the oldest n sets of game data with
-    newly generated game data as specified in the config
+    Adds newly generated game data as specified in the config,
+    removing the oldest games once the dataset is full
     """
 
-    ds.remove_first_n(NEW_GAMES_PER_DS)
+    n_remove = len(ds.start_indices) + NEW_GAMES_PER_DS - RL_DS_SIZE
+
+    if n_remove > 0:
+        ds.remove_first_n(n_remove)
 
     for _ in tqdm(range(NEW_GAMES_PER_DS), desc=tqdm_desc):
         tree, winner = self_play(bot)
@@ -124,12 +127,43 @@ def make_optimizer(model: torch.nn.Module) -> torch.optim.Optimizer:
         model: the NeuralNet to optimize
     """
 
-    return torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-4)
+    return torch.optim.AdamW(model.parameters(), lr=RL_LEARNING_RATE, weight_decay=1e-4)
 
 
-def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Optimizer = None) -> float:
+def random_symmetry(s: torch.Tensor, pi: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Trains a bot for one epoch on the produced dataset
+    Returns the batch with each position and its policy rotated and/or
+    reflected by a random one of the 8 symmetries of the board
+
+    Args:
+        s: batch of positions from node_to_tensor
+        pi: batch of policies (pass last)
+    """
+
+    size = s.shape[-1]
+
+    s = s.clone()
+    board_pi = pi[:, :-1].reshape(-1, size, size).clone()
+
+    symmetries = torch.randint(0, 8, (len(s),))
+
+    for t in range(1, 8):
+        idx = symmetries == t
+
+        def transform(x):
+            x = torch.rot90(x, t % 4, dims=(-2, -1))
+            return x.flip(-1) if t >= 4 else x
+
+        s[idx] = transform(s[idx])
+        board_pi[idx] = transform(board_pi[idx])
+
+    return s, torch.cat([board_pi.reshape(len(pi), -1), pi[:, -1:]], dim=1)
+
+
+def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Optimizer = None) -> Tuple[float, float, float]:
+    """
+    Trains a bot for one epoch on the produced dataset and
+    returns the mean (total, value, policy) loss
 
     Args:
         ds: Dataset to train on
@@ -144,11 +178,14 @@ def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Opti
 
     criterion = GoLoss(1) # Balanced cross-entropy and mse
 
-    train_loss = 0
+    train_loss = value_loss = policy_loss = 0
     bot.model = bot.model.to(DEVICE)
     bot.model.train()
 
     for s, z, pi in dl:
+        if RL_AUGMENT:
+            s, pi = random_symmetry(s, pi)
+
         s = s.to(DEVICE)
         z = z.to(DEVICE)
         pi = pi.to(DEVICE)
@@ -159,11 +196,13 @@ def train_one_epoch(ds: Dataset, bot: MonteCarloBot, optimizer: torch.optim.Opti
         
         loss = criterion(z, z_hat, pi, pi_hat)
         train_loss += loss.item()
+        value_loss += criterion.value_loss.item()
+        policy_loss += criterion.policy_loss.item()
         loss.backward()
 
         optimizer.step()
     
-    return train_loss / len(dl)
+    return train_loss / len(dl), value_loss / len(dl), policy_loss / len(dl)
   
 
 if __name__ == "__main__":
@@ -176,7 +215,7 @@ if __name__ == "__main__":
     optimizer = make_optimizer(bot.model)
 
     for i in range(EPOCHS):
-        print(f"Epoch {i+1} - Training Loss: ", end="")
+        print(f"Epoch {i+1} - Training Loss (total, value, policy): ", end="")
         print(train_one_epoch(ds, bot, optimizer))
 
         print("Rebuilding dataset... ", end="")
