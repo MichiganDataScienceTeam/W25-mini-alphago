@@ -26,6 +26,10 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
         new_curr = bot.choose_move_tree(SEARCHES_PER_MOVE)
+
+        # Save the search result now since the chosen child keeps getting visits after the move
+        bot.mcts.curr.policy_target = bot.mcts.curr.get_policy(temperature=1)
+
         bot.mcts.curr = new_curr
         move = new_curr.prev_move
 
