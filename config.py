@@ -37,7 +37,7 @@ RL_INIT_WEIGHTS = "RL_weights.pt"  # Weights to start RL from (None for random, 
 RL_CHECKPOINT_EVERY = 25  # Epochs between saved copies of the weights (to roll back if training breaks)
 
 # Multiprocessing params
-PROCESSES = 16
+PROCESSES = 32
 WORKERS_PER_PROCESS = 3  # Self-play workers per process when using the inference server
 
 # Device

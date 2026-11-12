@@ -13,8 +13,8 @@
 #SBATCH --mail-type=END,FAIL        # Notification type: send email when job ends or fails
 #SBATCH --nodes=1                   # Number of nodes
 #SBATCH --ntasks-per-node=1         # Number of tasks per node
-#SBATCH --cpus-per-task=17          # Number of CPUs per task (PROCESSES in config.py + 1)
-#SBATCH --mem=48G                   # Total memory for the job (~0.5GB per self-play worker)
+#SBATCH --cpus-per-task=33          # Number of CPUs per task (PROCESSES in config.py + 1)
+#SBATCH --mem=64G                   # Total memory for the job (~0.5GB per self-play worker)
 #SBATCH --time=1-00:00:00           # Maximum runtime (1 day max for the team QOS)
 #SBATCH --gpus=1                    # Number of GPUs
 #SBATCH --partition=gpu             # Partition to use
