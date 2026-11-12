@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 
@@ -193,6 +194,7 @@ def save_model(model: nn.Module, filepath: str, prefix: str = "Model saved to") 
         prefix: prefix of the print message
     """
 
+    # Save to a temp file first so a job killed mid-save doesn't corrupt the old weights
     torch.save({
         'model_state_dict': model.state_dict(),
         'config': {
@@ -201,7 +203,8 @@ def save_model(model: nn.Module, filepath: str, prefix: str = "Model saved to") 
             'kernel': model.conv.conv.kernel_size[0],
             'num_residuals': len(model.residuals)
         }
-    }, filepath)
+    }, filepath + ".tmp")
+    os.replace(filepath + ".tmp", filepath)
 
     print(f"{prefix} {filepath}")
 

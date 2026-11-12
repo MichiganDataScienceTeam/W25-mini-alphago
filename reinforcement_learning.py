@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 
 from tqdm import tqdm
@@ -28,10 +29,15 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
     # Play the game
     while not bot.mcts.curr.is_terminal() and bot.mcts.curr.move < MAX_MOVES:
 
-        # Explore moves the network doesn't like yet
-        bot.mcts.add_noise()
+        # Only full searches are good enough to train the policy on
+        full_search = random.random() < FULL_SEARCH_PROB
 
-        new_curr = bot.choose_move_tree(SEARCHES_PER_MOVE)
+        if full_search:
+            # Explore moves the network doesn't like yet
+            bot.mcts.add_noise()
+            bot.mcts.curr.full_search = True
+
+        new_curr = bot.choose_move_tree(FULL_SEARCHES if full_search else FAST_SEARCHES)
         bot.mcts.curr = new_curr
         move = new_curr.prev_move
 
@@ -96,7 +102,7 @@ def create_dataset(bot: MonteCarloBot, tqdm_desc: str = "") -> Dataset:
 
     for _ in tqdm(range(RL_DS_START_SIZE), desc=tqdm_desc):
         tree, winner = self_play(bot)
-        out.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
+        out.add_rl_game(tree, winner)
     
     return out
 
@@ -114,7 +120,7 @@ def update_dataset(ds: Dataset, bot: MonteCarloBot, tqdm_desc: str = "") -> None
 
     for _ in tqdm(range(NEW_GAMES_PER_DS), desc=tqdm_desc):
         tree, winner = self_play(bot)
-        ds.add_rl_game(tree, winner, SELF_PLAY_KEEP_PROB)
+        ds.add_rl_game(tree, winner)
 
 
 def make_optimizer(model: torch.nn.Module) -> torch.optim.Optimizer:

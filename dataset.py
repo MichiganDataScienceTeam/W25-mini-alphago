@@ -2,7 +2,6 @@ from __future__ import annotations
 import os
 import torch
 
-import random
 
 from game_node import GameNode
 from tree_node import TreeNode
@@ -98,9 +97,10 @@ class Dataset:
             node = node.prev
 
 
-    def add_rl_game(self, node: TreeNode, final_eval: float, keep_prob: float = SELF_PLAY_KEEP_PROB) -> None:
+    def add_rl_game(self, node: TreeNode, final_eval: float) -> None:
         """
-        Adds a game to the dataset
+        Adds the positions of a game that got a full search to the dataset
+        (fast searches are too noisy to train on, see FULL_SEARCH_PROB)
 
         Args:
             node: the last TreeNode in the game
@@ -110,6 +110,10 @@ class Dataset:
         self.start_indices.append(len(self.positional_data))
 
         while node is not None:
+            if not getattr(node, "full_search", False):
+                node = node.prev
+                continue
+
             s = node_to_tensor(node)
             z = torch.tensor([final_eval], dtype=torch.float32)
             probs = node.get_policy(temperature=1) # Train on the raw visit counts
@@ -124,9 +128,8 @@ class Dataset:
                 else:
                     pi[prev_move[0] * BOARD_SIZE + prev_move[1]] = probs[i].item()
 
-            if random.random() < keep_prob:
-                self.positional_data.append((s, z, pi))
-            
+            self.positional_data.append((s, z, pi))
+
             node = node.prev
 
 
@@ -165,10 +168,12 @@ class Dataset:
             prefix: prefix of the print message
         """
 
+        # Save to a temp file first so a job killed mid-save doesn't corrupt the old dataset
         torch.save({
             'positional_data': self.positional_data,
             'start_indices': self.start_indices
-        }, filepath)
+        }, filepath + ".tmp")
+        os.replace(filepath + ".tmp", filepath)
 
         print(f"{prefix} {filepath}")
 

@@ -6,7 +6,11 @@ NUM_RESIDUALS = 19
 
 # Search parameters
 C_PUCT = 2.5  # AlphaZero's 1.25 doubled since our values are in [-1, 1] instead of [0, 1]
-SEARCHES_PER_MOVE = 64
+# Playout cap randomization (like KataGo): a few moves get a full search and become training data,
+# the rest get a fast search to finish games faster (about 74 searches per move on average)
+FULL_SEARCHES = 200
+FAST_SEARCHES = 32
+FULL_SEARCH_PROB = 0.25
 
 # Training parameters
 LEARNING_RATE = .001
@@ -19,7 +23,6 @@ SL_VAL_FRACTION = 0.1  # Fraction of games/ held out for validation (in addition
 SL_AUGMENT = True  # Train on all 8 symmetries of each game
 
 # RL params
-SELF_PLAY_KEEP_PROB = 0.2
 NEW_GAMES_PER_DS = 256  # Not fully implemented for mp: Must be divisible by PROCESSES
 RL_DS_START_SIZE = NEW_GAMES_PER_DS * 2  # Games played before the first epoch
 RL_DS_SIZE = NEW_GAMES_PER_DS * 8  # Max games kept, the oldest are removed once full

@@ -37,6 +37,9 @@ python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 # Self-play requires an empty temp directory (may be left over from a killed job)
 rm -rf temp_files
 
+# Log GPU use every 5 minutes (low use during self-play means the CPUs are the bottleneck)
+nvidia-smi --query-gpu=timestamp,utilization.gpu,memory.used --format=csv -l 300 > "gpu-$SLURM_JOB_ID.csv" &
+
 
 # Run the program
 python -u mp_train_alphago.py
