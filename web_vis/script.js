@@ -84,7 +84,7 @@ async function updateTree() {
 
 // Board updates (backend required)
 async function playMove(i, j) {
-    await fetch("/play_move", {
+    const response = await fetch("/play_move", {
         "method": "POST",
         "headers": {
             "Content-Type": "application/json",
@@ -94,6 +94,16 @@ async function playMove(i, j) {
             "col": j
         })
     })
+
+    // Don't let the bot move after an invalid move
+    if (!response.ok) {
+        return
+    }
+
+    await updateBoard()
+
+    // The bot replies after the player's move is shown
+    await fetch("/bot_move", {"method": "POST"})
 
     updateBoard()
     updateTree()

@@ -17,7 +17,8 @@ from tree_node import TreeNode
 from monte_carlo import MonteCarlo
 
 # Model setup
-MODEL_PATH = "model.pt" # Update this as needed
+MODEL_PATH = "RL_weights.pt" # Update this as needed
+BOT_SEARCHES = 256 # Visits per position before the bot replies
 
 model = NeuralNet()
 
@@ -50,7 +51,8 @@ tree = MonteCarlo(
 def search():
     global tree
 
-    for _ in range(10):
+    # Reuse the existing subtree and search until the position has BOT_SEARCHES visits
+    while tree.curr.num_visits < BOT_SEARCHES:
         tree.search()
 
 search()
@@ -93,8 +95,27 @@ def play_move():
             tree.curr = child
             break
     else:
-        raise ValueError(f"Unable to find child for move at {data['row'], data['col']}")
-    
+        # Pass isn't in the tree before NUM_MOVES_ALLOW_PASS, but the player can still pass
+        child = tree.curr.create_child((data["row"], data["col"]))
+        tree.curr.nexts.append(child)
+        tree.curr = child
+
+    # The bot searches in /bot_move so the player's move shows right away
+    return "Good", 200
+
+@app.route("/bot_move", methods=["POST"])
+def bot_move():
+    global tree
+
+    if tree.curr.is_terminal():
+        return "Game over", 200
+
+    search()
+
+    # Play the most visited move (no randomness against a human)
+    tree.curr = max(tree.curr.nexts, key=lambda child: child.num_visits)
+
+    # Search the player's position too so the policy and value show the search result
     search()
 
     return "Good", 200
@@ -122,7 +143,11 @@ def undo():
     if tree.curr.prev is None:
         return jsonify({"error": "No move to undo"}), 400
 
+    # Undo the bot's reply and the player's move so it's the player's turn again
     tree.curr = tree.curr.prev
+
+    if tree.curr.prev is not None and tree.curr.move % 2 == 1:
+        tree.curr = tree.curr.prev
 
     return "Good", 200
 
@@ -133,6 +158,17 @@ def network():
     policy, val = model(node_to_tensor(tree.curr).unsqueeze(0))
 
     policy = policy.flatten().detach() # Already softmaxed by the PolicyHead
+    val = val.detach().item()
+
+    # Show the search result instead of the network once the position has been searched
+    if sum(child.num_visits for child in tree.curr.nexts) > 0:
+        policy = torch.zeros_like(policy)
+
+        for child in tree.curr.nexts:
+            row, col = child.prev_move
+            policy[-1 if (row, col) == (-1, -1) else row * SIZE + col] = child.num_visits
+
+        val = tree.curr.Q_value()
 
     policy /= policy.max()
     policy = policy / 5
@@ -141,7 +177,7 @@ def network():
 
     return jsonify({
         "policy": policy.tolist(),
-        "value": val.detach().item()
+        "value": val
     }), 200
 
 @app.route("/get_tree", methods=["POST"])
