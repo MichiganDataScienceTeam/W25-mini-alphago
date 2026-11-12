@@ -163,19 +163,22 @@ class TreeNode(GameNode):
         return self.nexts
 
     
-    def backprop(self, value):
+    def backprop(self, value, root = None):
         """
         Add value to each TreeNode's total_val and increment the num_visits 
         for each TreeNode node up until the root
 
         Args:
             value: The value computed by monte_carlo eval
+            root: the root of the search (None to go up to the start of the game)
         """
         self.num_visits += 1
         self.total_value += value
 
-        if self.prev is not None:
-            self.prev.backprop(value)
+        # Stop at the search root so searches after a move don't change the
+        # visit counts (and policy targets) of earlier positions
+        if self.prev is not None and self is not root:
+            self.prev.backprop(value, root)
 
 
     def get_policy(self, temperature: float = None) -> torch.Tensor:

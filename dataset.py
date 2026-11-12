@@ -110,13 +110,14 @@ class Dataset:
         self.start_indices.append(len(self.positional_data))
 
         while node is not None:
-            if not getattr(node, "full_search", False):
+            # Skip positions without a full search (fast searches are too noisy to train on)
+            if not hasattr(node, "policy_target"):
                 node = node.prev
                 continue
 
             s = node_to_tensor(node)
             z = torch.tensor([final_eval], dtype=torch.float32)
-            probs = node.get_policy(temperature=1) # Train on the raw visit counts
+            probs = node.policy_target # Raw visit counts when the move was chosen
 
             BOARD_SIZE = node.size
             pi = torch.zeros(BOARD_SIZE * BOARD_SIZE + 1)

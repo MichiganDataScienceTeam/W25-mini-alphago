@@ -35,9 +35,13 @@ def self_play(bot: MonteCarloBot, verbose: bool = False):
         if full_search:
             # Explore moves the network doesn't like yet
             bot.mcts.add_noise()
-            bot.mcts.curr.full_search = True
 
         new_curr = bot.choose_move_tree(FULL_SEARCHES if full_search else FAST_SEARCHES)
+
+        # Save the search result now since the chosen child keeps getting visits after the move
+        if full_search:
+            bot.mcts.curr.policy_target = bot.mcts.curr.get_policy(temperature=1)
+
         bot.mcts.curr = new_curr
         move = new_curr.prev_move
 

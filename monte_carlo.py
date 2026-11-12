@@ -151,7 +151,7 @@ class MonteCarlo:
 
         # Use the real result of finished games instead of the network's guess
         if selected.is_terminal():
-            selected.backprop(selected.compute_winner())
+            selected.backprop(selected.compute_winner(), self.curr)
             return
 
         val, policy = self.evaluate(selected)
@@ -162,7 +162,7 @@ class MonteCarlo:
         else: 
             self.expand(selected, policy, allow_pass=False)
         
-        selected.backprop(val)
+        selected.backprop(val, self.curr)
     
 
     def add_noise(self) -> None:
