@@ -17,8 +17,8 @@ from tree_node import TreeNode
 from monte_carlo import MonteCarlo
 
 # Model setup
-MODEL_PATH = "RL_weights.pt" # Update this as needed
-BOT_SEARCHES = 256 # Visits per position before the bot replies
+MODEL_PATH = "RL_weights_111.pt" # Update this as needed
+BOT_SEARCHES = 512 # Visits per position before the bot replies
 
 model = NeuralNet()
 
