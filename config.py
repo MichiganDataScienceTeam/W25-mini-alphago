@@ -5,7 +5,7 @@ KERNEL = 3
 NUM_RESIDUALS = 19
 
 # Search parameters
-C_PUCT = 5
+C_PUCT = 2.5
 SEARCHES_PER_MOVE = 64
 
 # Training parameters
